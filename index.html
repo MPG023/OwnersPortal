@@ -1,0 +1,1597 @@
+<link rel='stylesheet' href='https://fonts.googleapis.com/icon?family=Material+Icons'>
+
+<div id="loginPage" class="login-page">
+
+  <div class="login-box">
+
+    <label>ログインID</label>
+    <input type="email" id="email">
+
+    <label>パスワード</label>
+    <input type="password" id="password">
+
+    <div class="show-pass">
+      <input type="checkbox" onclick="togglePassword()">
+      パスワードを表示する
+    </div>
+
+    <p class="login-text">
+      ログインID、パスワードが不明な場合、管理者にお問い合わせ下さい。
+    </p>
+
+    <button class="login-btn" onclick="login()">
+      ログイン
+    </button>
+
+  </div>
+
+</div>
+
+<div class="app" id="portal" style="display:none;">
+
+  <header class="top-header">
+
+    <div class="logo">
+      <img src="https://i.imgur.com/q99bLWb.png" alt="ロゴ">
+    </div>
+
+    <div class="owner-info">
+      <div id="ownerName">読み込み中...</div>
+      <div id="ownerRole"></div>
+    </div>
+
+    <button class="logout-btn" onclick="logout()">
+      ログアウト
+    </button>
+
+  </header>
+
+  <section id="home" class="page active">
+
+    <!-- スライダー -->
+    <div class="home-slider">
+
+      <div class="slides">
+
+        <img class="slide active" src="https://mpg023.github.io/OwnersPortal/images/slider/slide1.jpg">
+
+        <img class="slide" src="https://mpg023.github.io/OwnersPortal/images/slider/slide2.jpg">
+
+        <img class="slide" src="https://mpg023.github.io/OwnersPortal/images/slider/slide3.jpg">
+
+      </div>
+
+      <div class="slider-dots">
+        <span class="dot active"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+
+    </div>
+
+    <!-- オーナー名 -->
+    <div class="owner-bar">
+      <span id="ownerNameBar">
+        読み込み中...
+      </span>
+    </div>
+
+    <!-- アイコンメニュー -->
+    <div class="home-grid">
+
+      <div class="home-card" onclick="showPage('buildingInfo')">
+        <span class="material-icons">apartment</span>
+        <p>建物の状況</p>
+      </div>
+
+      <div class="home-card" onclick="showPage('inspection')">
+        <span class="material-icons">fact_check</span>
+        <p>建物定期報告書</p>
+      </div>
+
+      <div class="home-card" onclick="showPage('repair-status')">
+        <span class="material-icons">construction</span>
+        <p>修繕工事状況</p>
+      </div>
+
+      <div class="home-card" onclick="openPhotoMenu()">
+        <span class="material-icons">photo_library</span>
+        <p>建物写真</p>
+      </div>
+
+      <div class="home-card" onclick="showPage('paymentPage')">
+        <span class="material-icons">payments</span>
+        <p>お支払い</p>
+      </div>
+
+      <div class="home-card" onclick="showPage('income')">
+        <span class="material-icons">bar_chart</span>
+        <p>年間収支</p>
+      </div>
+
+      <div class="home-card" onclick="showPage('noticeListPage')">
+
+        <div class="icon-wrap">
+          <span class="material-icons">campaign</span>
+          <span id="noticeCountHome" class="notice-badge"></span>
+        </div>
+
+        <p>お知らせ</p>
+
+      </div>
+
+      <div class="home-card" onclick="showPage('ownerInfo')">
+        <span class="material-icons">person</span>
+        <p>オーナー情報</p>
+      </div>
+
+    </div>
+
+  </section>
+
+  <section id="buildingInfo" class="page">
+
+    <button class="back-btn" onclick="backHome()">
+      ← ホームへ戻る
+    </button>
+
+    <h2>建物情報</h2>
+
+    <div id="propertyContainer" class="property-grid"></div>
+
+  </section>
+
+  <section id="recruit-select" class="page">
+
+    <button class="back-btn" onclick="backHome()">
+      ← ホームへ戻る
+    </button>
+
+    <h2>募集状況を選択してください。</h2>
+
+    <div class="property-grid">
+
+      <div class="property-card" onclick="showPage('building-status')">
+        <div class="property-body">
+          <h3>ルミナス・スターズ</h3>
+          <p>募集状況を見る</p>
+        </div>
+      </div>
+
+      <div class="property-card" onclick="showPage('komatsu-status')">
+        <div class="property-body">
+          <h3>小松住宅</h3>
+          <p>募集状況を見る</p>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <section id="komatsu-status" class="page">
+    <button class="back-btn" onclick="backHome()">←　戻る</button>
+    <h2>小松住宅の募集状況</h2>
+    <div class="title-line"></div>
+    <div class="info-box auto-date"></div>
+    <h3>住棟</h3>
+    <table class="status-table">
+      <thead>
+        <tr>
+          <th>部屋No.</th>
+          <th>募集状況</th>
+          <th>入居日</th>
+          <th>募集時の家賃</th>
+          <th>入居者名</th>
+          <th>備考</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>１号棟</td>
+          <td>ご入居済</td>
+          <td>2022/11/30</td>
+          <td>55,000円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>２号棟</td>
+          <td>ご入居済</td>
+          <td>-</td>
+          <td>45,000円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>３号棟</td>
+          <td>ご契約済</td>
+          <td>2026/08/01 予定</td>
+          <td>55,000円</td>
+          <td>*****</td>
+          <td>
+            <a href="https://www.homes.co.jp/chintai/b-1257040027024/?cmp_id=08_aooeee_00000036&openExternalBrowser=1" target="_blank" class="eheya-link">
+              ● ホームズ掲載アーカイブページを見る
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td>４号棟</td>
+          <td>ご入居済</td>
+          <td>-</td>
+          <td>50,000円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="info-box" style="margin-top:30px;">
+
+      募集状況には、ご入居までの5つの状態があります。<br><br>
+
+      <strong>募集中 → お申込 → ご契約済 → 入居手続中 → ご入居済</strong><br><br>
+
+      ※「お申込」は、入居希望者がいる状態です。<br><br>
+
+      ※ ご契約済・入居手続中・ご入居済は、入居日時点の消費税率で表示しています。<br>
+      ※ 入居者様の氏名については「*」にて記載しております。<br>
+      ※ 募集開始直後や、募集中のお部屋が仮押えされた場合は、『●エイブルネットワーク掲載ページを見る』の遷移先が表示されない場合があります。
+
+    </div>
+  </section>
+
+  <section id="building-status" class="page">
+    <button class="back-btn" onclick="backHome()">←　戻る</button>
+    <h2>ルミナス・スターズの募集状況</h2>
+    <div class="title-line"></div>
+    <div class="info-box auto-date"></div>
+    <h3>住居</h3>
+    <table class="status-table">
+      <thead>
+        <tr>
+          <th>部屋No.</th>
+          <th>募集状況</th>
+          <th>入居日</th>
+          <th>募集時の家賃</th>
+          <th>入居者名</th>
+          <th>備考</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>01010</td>
+          <td>ご入居済</td>
+          <td>2026/03/01</td>
+          <td>64,500円</td>
+          <td>*****</td>
+          <td><a href="https://www.homes.co.jp/chintai/room/4f0de4a140cb30f36e3e1b67d8270a0bd7503c9c/" class="eheya-link">
+              ● ホームズ掲載アーカイブページを見る
+            </a></td>
+        </tr>
+        <tr>
+          <td>01020</td>
+          <td>お申込</td>
+          <td></td>
+          <td>68,000円</td>
+          <td>*****</td>
+          <td><a href="https://www.homes.co.jp/chintai/room/41f6342f04ad5cfd7eeab03bfeed89232ebf9104/" class="eheya-link">
+              ● ホームズ掲載アーカイブページを見る
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td>01030</td>
+          <td>ご入居済</td>
+          <td>2026/03/14</td>
+          <td>62,500円</td>
+          <td>*****</td>
+          <td><a href="https://www.homes.co.jp/archive/b-47908214/u-42425679/" target="_blank" class="eheya-link">
+              ● ホームズ掲載アーカイブページを見る
+            </a></td>
+        </tr>
+        <tr>
+          <td>01040</td>
+          <td>ご入居済</td>
+          <td>2026/02/01</td>
+          <td>75,000円</td>
+          <td>*****</td>
+          <td><a href="https://www.homes.co.jp/chintai/room/51ecb0853c56f4ded131d49fdf62f20ced917dd4/" class="eheya-link">
+              ● ホームズ掲載アーカイブページを見る
+            </a></td>
+        </tr>
+        <tr>
+          <td>02010</td>
+          <td>ご入居済</td>
+          <td>2026/02/01</td>
+          <td>69,000円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>02020</td>
+          <td>ご入居済</td>
+          <td>2026/02/14</td>
+          <td>67,000円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>02030</td>
+          <td>ご入居済</td>
+          <td>2026/02/14</td>
+          <td>67,000円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>02040</td>
+          <td>ご入居済</td>
+          <td>2026/02/01</td>
+          <td>69,000円</td>
+          <td>*****</td>
+          <td><a href="https://www.homes.co.jp/chintai/room/b62ab7768f1ea979790efcb1d64aafdbd305726e/" class="eheya-link">
+              ● ホームズ掲載アーカイブページを見る
+            </a></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>駐車場</h3>
+    <table class="status-table">
+      <thead>
+        <tr>
+          <th>駐車場CD</th>
+          <th>募集状況</th>
+          <th>入居日</th>
+          <th>募集時の駐車料</th>
+          <th>入居者名</th>
+          <th>備考</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>001</td>
+          <td>ご入居済</td>
+          <td>2026/03/01</td>
+          <td>3,300円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>002</td>
+          <td>ご入居済</td>
+          <td>2026/07/23</td>
+          <td>3,300円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>003</td>
+          <td>ご入居済</td>
+          <td>2026/02/01</td>
+          <td>3,300円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>004</td>
+          <td>お申込</td>
+          <td></td>
+          <td>3,300円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>005</td>
+          <td>ご入居済</td>
+          <td>2026/02/14</td>
+          <td>3,300円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>006</td>
+          <td>ご入居済</td>
+          <td>2026/02/20</td>
+          <td>3,300円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>007</td>
+          <td>ご入居済</td>
+          <td>2026/02/01</td>
+          <td>3,300円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>008</td>
+          <td>ご入居済</td>
+          <td>2026/02/01</td>
+          <td>3,300円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>009</td>
+          <td>ご入居済</td>
+          <td>2026/02/14</td>
+          <td>3,300円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>010</td>
+          <td>ご入居済</td>
+          <td>2026/03/01</td>
+          <td>3,300円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>011</td>
+          <td>ご入居済</td>
+          <td>2026/02/01</td>
+          <td>3,300円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>012</td>
+          <td>お申込</td>
+          <td></td>
+          <td>3,300円</td>
+          <td>*****</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="info-box" style="margin-top:30px;">
+
+      募集状況には、ご入居までの5つの状態があります。<br><br>
+
+      <strong>募集中 → お申込 → ご契約済 → 入居手続中 → ご入居済</strong><br><br>
+
+      ※「お申込」は、入居希望者がいる状態です。<br><br>
+
+      ※ ご契約済・入居手続中・ご入居済は、入居日時点の消費税率で表示しています。<br>
+      ※ 入居者様の氏名については「*」にて記載しております。<br>
+      ※ 募集開始直後や、募集中のお部屋が仮押えされた場合は、『●いい部屋ネット掲載ページを見る』の遷移先が表示されない場合があります。
+
+    </div>
+  </section>
+
+  <section id="ownerInfo" class="page">
+    <button class="back-btn" onclick="backHome()">← ホームへ戻る</button>
+    <h2>オーナー様情報</h2>
+    <p>準備中です。</p>
+  </section>
+
+  <section id="income" class="page">
+    <button class="back-btn" onclick="backHome()">← ホームへ戻る</button>
+    <h2>年間収支</h2>
+    <p>準備中です。</p>
+  </section>
+
+  <section id="inspection" class="page">
+
+    <button class="back-btn" onclick="backHome()">
+      ← ホームへ戻る
+    </button>
+
+    <h2>建物定期報告書</h2>
+
+    <!--==============================
+建物定期報告書
+Page 1
+==============================-->
+
+    　<div class="inspection-page" id="inspectionPage1">
+
+      <div class="inspection-cover">
+
+        <h1>建物定期報告書</h1>
+
+        <div class="inspection-subtitle">
+          BUILDING INSPECTION REPORT
+        </div>
+
+        <div class="inspection-photo">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG" id="inspectionMainPhoto">
+
+        </div>
+
+        <table class="inspection-basic">
+
+          <tr>
+            <th>建物名</th>
+            <td id="reportBuildingName">
+              ルミナス・スターズ
+            </td>
+          </tr>
+
+          <tr>
+            <th>所在地</th>
+            <td id="reportAddress">
+              長野県塩尻市広丘原新田206-13
+            </td>
+          </tr>
+
+          <tr>
+            <th>契約者</th>
+            <td id="reportOwner">
+              小松 宗夫
+            </td>
+          </tr>
+
+          <tr>
+            <th>契約形態</th>
+            <td id="reportContract">
+              フルパッケージ
+            </td>
+          </tr>
+
+          <tr>
+            <th>管理営業所</th>
+            <td id="reportOffice">
+              松本営業所
+            </td>
+          </tr>
+
+          <tr>
+            <th>担当者</th>
+            <td id="reportStaff">
+              鈴木 康治
+            </td>
+          </tr>
+
+          <tr>
+            <th>点検実施日</th>
+            <td id="reportInspectionDate">
+              2026年7月16日
+            </td>
+          </tr>
+
+          <tr>
+            <th>築年数</th>
+            <td id="reportAge">
+              築0年6か月
+            </td>
+          </tr>
+
+          <tr>
+            <th>総戸数</th>
+            <td>
+              8戸
+            </td>
+          </tr>
+
+          <tr>
+            <th>入居戸数</th>
+            <td>
+              7戸
+            </td>
+          </tr>
+
+          <tr>
+            <th>入居率</th>
+            <td>
+              87.5%
+            </td>
+          </tr>
+
+        </table>
+
+        <div class="inspection-summary">
+
+          <h3>総合判定</h3>
+
+          <div class="inspection-rank good">
+
+            良好
+
+          </div>
+
+          <p>
+
+            建物全体を点検した結果、
+            現時点では重大な異常は確認されませんでした。
+            一部軽微な補修箇所がありますが、
+            建物の安全性には問題ありません。
+
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!--==============================
+Page 2
+外壁・屋根・基礎
+===============================-->
+
+    <div class="inspection-page" id="inspectionPage2">
+
+      <h2 class="inspection-title">
+
+        外壁・屋根・基礎
+
+      </h2>
+
+      <table class="inspection-check">
+
+        <thead>
+
+          <tr>
+
+            <th width="28%">点検項目</th>
+
+            <th width="12%">判定</th>
+
+            <th>コメント</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr>
+
+            <td>外壁</td>
+
+            <td class="good">〇</td>
+
+            <td>
+              クラック・浮き・剥離はありません。
+            </td>
+
+          </tr>
+
+          <tr>
+
+            <td>シーリング</td>
+
+            <td class="good">〇</td>
+
+            <td>
+              劣化は確認されませんでした。
+            </td>
+
+          </tr>
+
+          <tr>
+
+            <td>屋根</td>
+
+            <td class="good">〇</td>
+
+            <td>
+              異常ありません。
+            </td>
+
+          </tr>
+
+          <tr>
+
+            <td>雨どい</td>
+
+            <td class="good">〇</td>
+
+            <td>
+              詰まり・破損なし。
+            </td>
+
+          </tr>
+
+          <tr>
+
+            <td>基礎</td>
+
+            <td class="good">〇</td>
+
+            <td>
+              クラックなし。
+            </td>
+
+          </tr>
+
+        </tbody>
+
+      </table>
+
+      <div class="inspection-photo-grid">
+
+        <div class="inspection-photo-card">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG">
+
+          <div>
+
+            外壁
+
+          </div>
+
+        </div>
+
+        <div class="inspection-photo-card">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG">
+
+          <div>
+
+            屋根
+
+          </div>
+
+        </div>
+
+        <div class="inspection-photo-card">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG">
+
+          <div>
+
+            基礎
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!--==============================
+Page 3
+共用部点検
+===============================-->
+
+    <div class="inspection-page" id="inspectionPage3">
+
+      <h2 class="inspection-title">
+
+        共用部点検
+
+      </h2>
+
+      <table class="inspection-check">
+
+        <thead>
+
+          <tr>
+
+            <th width="28%">点検項目</th>
+            <th width="12%">判定</th>
+            <th>コメント</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr>
+            <td>共用廊下</td>
+            <td class="good">〇</td>
+            <td>汚れ・破損ありません。</td>
+          </tr>
+
+          <tr>
+            <td>階段</td>
+            <td class="good">〇</td>
+            <td>手すり・踏面とも異常ありません。</td>
+          </tr>
+
+          <tr>
+            <td>駐車場</td>
+            <td class="good">〇</td>
+            <td>区画線・アスファルトとも良好です。</td>
+          </tr>
+
+          <tr>
+            <td>ゴミ置場</td>
+            <td class="good">〇</td>
+            <td>清掃状態良好です。</td>
+          </tr>
+
+          <tr>
+            <td>宅配ボックス</td>
+            <td class="good">〇</td>
+            <td>正常に使用できます。</td>
+          </tr>
+
+          <tr>
+            <td>庭園灯</td>
+            <td class="good">〇</td>
+            <td>夜間点灯確認済みです。</td>
+          </tr>
+
+          <tr>
+            <td>外構フェンス</td>
+            <td class="good">〇</td>
+            <td>ぐらつき等ありません。</td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+      <div class="inspection-photo-grid">
+
+        <div class="inspection-photo-card">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG">
+
+          <div>共用廊下</div>
+
+        </div>
+
+        <div class="inspection-photo-card">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG">
+
+          <div>駐車場</div>
+
+        </div>
+
+        <div class="inspection-photo-card">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG">
+
+          <div>ゴミ置場</div>
+
+        </div>
+
+        <div class="inspection-photo-card">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG">
+
+          <div>庭園灯</div>
+
+        </div>
+
+      </div>
+
+      <div class="inspection-comment">
+
+        <h3>点検所見</h3>
+
+        <textarea id="inspectionComment1" rows="6" placeholder="点検内容を入力してください。"></textarea>
+
+      </div>
+
+    </div>
+
+    <!--==============================
+Page 4
+設備点検
+===============================-->
+
+    <div class="inspection-page" id="inspectionPage4">
+
+      <h2 class="inspection-title">
+
+        設備点検
+
+      </h2>
+
+      <table class="inspection-check">
+
+        <thead>
+
+          <tr>
+
+            <th width="28%">設備</th>
+
+            <th width="12%">判定</th>
+
+            <th>コメント</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr>
+
+            <td>給水設備</td>
+
+            <td class="good">〇</td>
+
+            <td>漏水・異常なし。</td>
+
+          </tr>
+
+          <tr>
+
+            <td>排水設備</td>
+
+            <td class="good">〇</td>
+
+            <td>詰まりありません。</td>
+
+          </tr>
+
+          <tr>
+
+            <td>電気設備</td>
+
+            <td class="good">〇</td>
+
+            <td>正常に作動しています。</td>
+
+          </tr>
+
+          <tr>
+
+            <td>消防設備</td>
+
+            <td class="good">〇</td>
+
+            <td>異常ありません。</td>
+
+          </tr>
+
+          <tr>
+
+            <td>インターホン</td>
+
+            <td class="good">〇</td>
+
+            <td>正常です。</td>
+
+          </tr>
+
+          <tr>
+
+            <td>DKロック</td>
+
+            <td class="good">〇</td>
+
+            <td>通信・施解錠とも正常。</td>
+
+          </tr>
+
+          <tr>
+
+            <td>インターネット設備</td>
+
+            <td class="good">〇</td>
+
+            <td>通信確認済み。</td>
+
+          </tr>
+
+          <tr>
+
+            <td>照明設備</td>
+
+            <td class="good">〇</td>
+
+            <td>点灯確認済み。</td>
+
+          </tr>
+
+        </tbody>
+
+      </table>
+
+      <div class="inspection-photo-grid">
+
+        <div class="inspection-photo-card">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG">
+
+          <div>
+
+            DKロック
+
+          </div>
+
+        </div>
+
+        <div class="inspection-photo-card">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG">
+
+          <div>
+
+            消防設備
+
+          </div>
+
+        </div>
+
+        <div class="inspection-photo-card">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG">
+
+          <div>
+
+            インターホン
+
+          </div>
+
+        </div>
+
+        <div class="inspection-photo-card">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG">
+
+          <div>
+
+            電気設備
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="inspection-comment">
+
+        <h3>
+
+          設備点検コメント
+
+        </h3>
+
+        <textarea id="inspectionComment2" rows="6" placeholder="設備点検の内容を入力してください。"></textarea>
+
+      </div>
+
+    </div>
+
+    <!--==============================
+Page 5
+写真一覧
+===============================-->
+
+    <div class="inspection-page" id="inspectionPage5">
+
+      <h2 class="inspection-title">
+
+        点検写真
+
+      </h2>
+
+      <p class="inspection-note">
+
+        点検時に撮影した写真です。
+
+      </p>
+
+      <div class="inspection-gallery">
+
+        <div class="gallery-item">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG" onclick="openInspectionImage(this.src)">
+
+          <div class="gallery-title">
+
+            建物全景
+
+          </div>
+
+          <div class="gallery-comment">
+
+            外観に異常ありません。
+
+          </div>
+
+        </div>
+
+        <div class="gallery-item">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG" onclick="openInspectionImage(this.src)">
+
+          <div class="gallery-title">
+
+            外壁
+
+          </div>
+
+          <div class="gallery-comment">
+
+            クラックなし。
+
+          </div>
+
+        </div>
+
+        <div class="gallery-item">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG" onclick="openInspectionImage(this.src)">
+
+          <div class="gallery-title">
+
+            駐車場
+
+          </div>
+
+          <div class="gallery-comment">
+
+            良好です。
+
+          </div>
+
+        </div>
+
+        <div class="gallery-item">
+
+          <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG" onclick="openInspectionImage(this.src)">
+
+          <div class="gallery-title">
+
+            ゴミ置場
+
+          </div>
+
+          <div class="gallery-comment">
+
+            清掃済み。
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- 写真拡大 -->
+
+    <div id="inspectionImageModal" class="image-modal">
+
+      <div class="image-modal-content">
+
+        <img id="inspectionModalImage">
+
+        <div class="modal-buttons">
+
+          <button onclick="closeInspectionImage()">
+
+            閉じる
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!--==============================
+Page 6
+総合判定
+===============================-->
+
+    <div class="inspection-page" id="inspectionPage6">
+
+      <h2 class="inspection-title">
+
+        総合判定
+
+      </h2>
+
+      <table class="inspection-summary-table">
+
+        <tr>
+
+          <th width="220">
+
+            建物全体判定
+
+          </th>
+
+          <td>
+
+            <span class="rank-good">
+
+              良好
+
+            </span>
+
+          </td>
+
+        </tr>
+
+        <tr>
+
+          <th>
+
+            緊急対応
+
+          </th>
+
+          <td>
+
+            なし
+
+          </td>
+
+        </tr>
+
+        <tr>
+
+          <th>
+
+            推奨修繕
+
+          </th>
+
+          <td>
+
+            現時点ではありません。
+
+          </td>
+
+        </tr>
+
+        <tr>
+
+          <th>
+
+            次回点検
+
+          </th>
+
+          <td>
+
+            2026年9月予定
+
+          </td>
+
+        </tr>
+
+      </table>
+
+      <br>
+
+      <h3>
+
+        点検担当コメント
+
+      </h3>
+
+      <textarea id="staffComment" rows="8" placeholder="点検担当者コメントを入力してください。"></textarea>
+
+      <br><br>
+
+      <h3>
+
+        オーナー様へのご案内
+
+      </h3>
+
+      <textarea id="ownerComment" rows="8" placeholder="オーナー様へのご案内を入力してください。"></textarea>
+
+      <br><br>
+
+      <div class="inspection-sign">
+
+        <div>
+
+          点検担当者
+
+          <br><br>
+
+          ______________________
+
+        </div>
+
+        <div>
+
+          点検日
+
+          <br><br>
+
+          ______________________
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <section id="setting" class="page">
+    <h2>設定</h2>
+    <button onclick="logout()">ログアウト</button>
+  </section>
+
+  <section id="detail" class="page">
+    <button class="back-btn" onclick="backHome()">← 戻る</button>
+    <h2 id="buildingName">建物情報</h2>
+    <div class="card-button-area">
+      <button class="recruit-btn" onclick="event.stopPropagation(); showPage('building-status')">
+        募集状況を見る
+      </button>
+      <button id="historyButton" class="history-btn" onclick="event.stopPropagation(); openPhotoMenu();">
+        写真を見る
+      </button>
+    </div>
+    <table class="card-table">
+      <tr>
+        <th>契約形態</th>
+        <td id="contract"></td>
+      </tr>
+      <tr>
+        <th>管理営業所</th>
+        <td id="office"></td>
+      </tr>
+      <tr>
+        <th>担当者</th>
+        <td id="staff"></td>
+      </tr>
+      <tr>
+        <th>点検実施日</th>
+        <td id="inspectionDate"></td>
+      </tr>
+      <tr>
+        <th>清掃実施日</th>
+        <td id="cleaningDate"></td>
+      </tr>
+      <tr>
+        <th>契約日</th>
+        <td id="contractDate"></td>
+      </tr>
+      <tr>
+        <th>完工日</th>
+        <td id="completion"></td>
+      </tr>
+      <tr>
+        <th>築年数</th>
+        <td id="age"></td>
+      </tr>
+      <tr id="totalBuildingsRow">
+        <th>総棟数</th>
+        <td id="totalBuildings"></td>
+      </tr>
+      <tr>
+        <th>入居戸数</th>
+        <td id="occupiedUnits"></td>
+      </tr>
+      <tr>
+        <th>入居率</th>
+        <td id="occupancyRate"></td>
+      </tr>
+      <tr>
+        <th>退去数</th>
+        <td id="moveOut"></td>
+      </tr>
+      <tr>
+        <th>今後入居</th>
+        <td id="futureOccupied"></td>
+      </tr>
+      <tr>
+        <th>見込み入居率</th>
+        <td id="futureRate"></td>
+      </tr>
+    </table>
+  </section>
+
+  <section id="noticeListPage" class="page">
+    <button class="back-btn" onclick="backHome()">← 戻る</button>
+    <h2>お知らせ一覧 　　※30秒ごとに自動更新します。</h2>
+    <div id="noticeList" class="notice-list">読み込み中...</div>
+  </section>
+
+  <section id="noticeDetailPage" class="page">
+    <button class="back-btn" onclick="backNoticeList()">← 戻る</button>
+    <div class="notice-detail">
+      <div id="detailDate" class="notice-date"></div>
+      <h2 id="detailTitle"></h2>
+      <div id="detailBody"></div>
+    </div>
+  </section>
+
+  <section id="repair-status" class="page">
+
+    <button class="back-btn" onclick="backHome()">
+      ← 戻る
+    </button>
+
+    <div id="repairTitle" class="repair-title">
+      修繕工事の状況
+    </div>
+
+    <div class="repair-line"></div>
+
+    <p class="repair-note">
+      ※オーナー様工事に入居者様ご負担分が含まれる場合があります。
+    </p>
+
+    <table class="repair-table">
+
+      <thead>
+        <tr>
+          <th>建物</th>
+          <th>工事名</th>
+          <th>部屋</th>
+          <th>オーナー様負担</th>
+          <th>入居者様負担</th>
+          <th>大東負担</th>
+          <th>対応状況</th>
+        </tr>
+      </thead>
+
+      <tbody id="repairTable"></tbody>
+
+    </table>
+
+  </section>
+
+  <section id="paymentPage" class="page">
+
+    <div class="page-title">
+      <span class="material-icons">paid</span>
+      <h2>月々のお支払い</h2>
+    </div>
+
+    <div class="month-bar">
+
+      <button id="prevMonthBtn">
+        ◀ 前月
+      </button>
+
+      <div id="paymentMonth">
+        2026年07月
+      </div>
+
+      <button id="nextMonthBtn">
+        次月 ▶
+      </button>
+
+    </div>
+
+    <div class="payment-total">
+
+      <div class="payment-label">
+        お支払額合計
+      </div>
+
+      <div class="payment-price" id="paymentTotal">
+        0円
+      </div>
+
+    </div>
+
+    <table class="payment-table">
+
+      <thead>
+
+        <tr>
+
+          <th>書類名</th>
+          <th>お支払日</th>
+          <th>お支払額</th>
+
+        </tr>
+
+      </thead>
+
+      <tbody id="paymentTableBody">
+      </tbody>
+
+    </table>
+
+  </section>
+
+  <section id="construction-status" class="page">
+    <button class="back-btn" onclick="backHome()">← 戻る</button>
+    <h2>工事の状況</h2>
+    <p>準備中です。</p>
+  </section>
+
+  <section id="building-history" class="page">
+    <button class="back-btn" onclick="backHome()">← 戻る</button>
+    <h2>ルミナス・スターズ 建物完成までの歩み</h2>
+    <div class="history-viewer">
+      <div class="history-main">
+        <img id="mainHistoryImage" src="" alt="工事写真" onclick="openHistoryImage()">
+        <div class="history-buttons">
+          <button onclick="prevHistory()">◀ 戻る</button>
+          <button onclick="nextHistory()">次へ ▶</button>
+          <button onclick="toggleSlide()">▶ スライドショー</button>
+        </div>
+      </div>
+      <div class="history-side">
+        <h3>写真一覧</h3>
+        <div id="historyList"></div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="bottom-nav">
+
+    <!-- ホーム -->
+    <button onclick="backHome()">
+      <span class="material-icons">home</span>
+      <span>ホーム</span>
+    </button>
+
+    <!-- 建物情報 -->
+    <button onclick="showPage('buildingInfo')">
+      <span class="material-icons">apartment</span>
+      <span>建物情報</span>
+    </button>
+
+    <!-- お支払い -->
+    <button onclick="showPage('paymentPage')">
+      <span class="material-icons">payments</span>
+      <span>お支払いの状況</span>
+    </button>
+
+    <!-- お知らせ -->
+    <button onclick="showPage('noticeListPage')">
+      <div class="icon-wrap">
+        <span class="material-icons">campaign</span>
+        <span id="noticeCount" class="notice-badge">0</span>
+      </div>
+
+      <span>お知らせ</span>
+    </button>
+
+    <!-- オーナー様情報 -->
+    <button onclick="showPage('ownerInfo')">
+      <span class="material-icons">person</span>
+      <span>オーナー様情報</span>
+    </button>
+
+  </nav>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-box">
+      <img src="https://www.image2url.com/r2/default/gifs/1782559479705-0ab57c6f-6bb9-43ab-8b60-355233b3bcb6.gif" class="loading-spinner">
+      <div class="loading-text">Loading...</div>
+    </div>
+  </div>
+
+  <!-- 写真メニュー -->
+  <div id="photo-menu" class="photo-menu">
+
+    <div class="photo-box">
+
+      <div class="photo-header">
+        <span>🏢 建物に関する写真</span>
+
+        <button class="close-photo" onclick="closePhotoMenu()">✕</button>
+      </div>
+
+      <button class="photo-item" onclick="closePhotoMenu();showPage('construction-status');">
+        🏠 工事の状況
+      </button>
+
+      <button class="photo-item" onclick="closePhotoMenu();showPage('building-history');loadHistory();">
+        📷 工事完成までの歩み
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- 工事写真の拡大表示モーダル -->
+  <div id="imageModal" class="image-modal">
+    <div class="image-modal-content">
+      <img id="modalImage" src="" alt="拡大画像">
+      <div class="modal-buttons">
+        <button onclick="prevModal()">◀ 戻る</button>
+        <button onclick="nextModal()">次へ ▶</button>
+        <button onclick="closeModal()">✕ 閉じる</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src='https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js'></script>
+<script src='https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js'></script>
+<script src='https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore-compat.js'></script>
