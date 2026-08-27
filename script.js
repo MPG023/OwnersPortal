@@ -146,7 +146,7 @@ const properties = {
   "ルミナス・スターズ": {
     image:
       "https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG",
-    address: "長野県塩尻市 広丘原新田 ２０６－１３ ",
+    address: "長野県塩尻市 広丘原新田 ２０６－１３",
     owner: "小松 　宗夫",
 
     contract: "フルパッケージ",
@@ -167,7 +167,7 @@ const properties = {
   小松住宅: {
     image:
       "https://mpg023.github.io/OwnersPortal/images/construction/cards/komatsu.JPG",
-    address: "長野県塩尻市　広丘原新田２０６－１",
+    address: "長野県塩尻市 広丘原新田 ２０６－１",
     owner: "小松 　宗夫",
 
     contract: "自主管理/一部不動産仲介",
