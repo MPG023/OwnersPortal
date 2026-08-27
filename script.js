@@ -2183,7 +2183,7 @@ function clearRememberedLoginFromSettings() {
 // 「ウェブプッシュ証明書（VAPIDキー）」をここに貼り付けてください。
 // Firebaseコンソール →プロジェクトの設定→Cloud Messaging タブ→
 // 「ウェブの構成」内の「鍵ペアを生成」で発行できます。
-const VAPID_KEY = "ここにVAPIDキーを貼り付けてください";
+const VAPID_KEY = "BJv1DRmdrNDSVZCvRwZ0garjjp4OSq67tNFamrdRlf4A0j_gz_394seBgEm3CBC0QBXdVC8iYXvTfoBVIEmwEFU";
 
 const PUSH_DEVICE_ID_KEY = "pushDeviceId";
 const PUSH_TOKEN_STORED_KEY = "pushTokenRegistered";
