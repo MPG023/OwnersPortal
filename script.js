@@ -175,7 +175,7 @@ const properties = {
     staff: "小松　泰輝",
     salesstaff: "-",
     inspectionDate: "2026/09/08",
-    cleaningDate: "2026/07/17",
+    cleaningDate: "-",
     contractDate: "-",
     completion: "1982/10/25",
     totalBuildings: "4戸",
