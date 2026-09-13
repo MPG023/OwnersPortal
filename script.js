@@ -158,9 +158,9 @@ const properties = {
     completion: "2026/01/31",
     totalBuildings: "",
     totalUnits: "8戸",
-    occupiedUnits: "8戸",
+    occupiedUnits: "7戸",
     moveOut: "0戸",
-    futureOccupied: "8戸",
+    futureOccupied: "7戸",
     futureRate: "87.5%"
   },
 
