@@ -161,7 +161,7 @@ const properties = {
     occupiedUnits: "7戸",
     moveOut: "0戸",
     futureOccupied: "7戸",
-    futureRate: "87.5%"
+    futureRate: "100%"
   },
 
   小松住宅: {
