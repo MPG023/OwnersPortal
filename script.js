@@ -150,7 +150,7 @@ const properties = {
     owner: "小松 　宗夫",
 
     contract: "フルパッケージ",
-    office: "松本",
+    office: "松本営業所",
     staff: "鈴木  　康治",
     inspectionDate: "2026/08/06",
     cleaningDate: "2026/09/01",
@@ -171,7 +171,7 @@ const properties = {
     owner: "小松 　宗夫",
 
     contract: "自主管理/一部不動産仲介",
-    office: "塩尻",
+    office: "塩尻営業所",
     staff: "小松　泰輝",
     salesstaff: "-",
     inspectionDate: "2026/09/08",
