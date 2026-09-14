@@ -2734,13 +2734,6 @@ function renderPayments() {
 }
 
 function updateButtons() {
-  const months = [...new Set(allPayments.map((x) => x.month))];
-
-  const prevKey =
-    currentMonth === 1
-      ? `${currentYear - 1}-12`
-      : `${currentYear}-${String(currentMonth - 1).padStart(2, "0")}`;
-
   const nextKey =
     currentMonth === 12
       ? `${currentYear + 1}-01`
@@ -2752,8 +2745,10 @@ function updateButtons() {
     today.getMonth() + 2
   ).padStart(2, "0")}`; // 今日の月の1ヶ月後
 
-  // 前月にデータが無い場合はボタンを無効化する
-  document.getElementById("prevMonthBtn").disabled = !months.includes(prevKey);
+  // 前月へは、支払いデータの有無にかかわらず掲載開始月まで戻れるようにする。
+  // データが無い月は「該当データがありません」と表示される。
+  const currentKey = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
+  document.getElementById("prevMonthBtn").disabled = currentKey <= "2026-01";
 
   // 次月は、「今日の月+1」を超えて進めないようにする
   document.getElementById("nextMonthBtn").disabled = nextKey > maxKey;
