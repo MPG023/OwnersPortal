@@ -183,7 +183,7 @@ const properties = {
     occupiedUnits: "4戸",
     moveOut: "0戸",
     futureOccupied: "4戸",
-    futureRate: "87.5%"
+    futureRate: "100%"
   }
 };
 
