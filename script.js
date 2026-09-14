@@ -68,19 +68,25 @@ async function fetchSecureCsv(type) {
   const res = await fetch(
     `${SECURE_API_URL}?idToken=${encodeURIComponent(
       idToken
-    )}&type=${encodeURIComponent(type)}`,
+    )}&type=${encodeURIComponent(type)}&ts=${Date.now()}`,
     { cache: "no-store" } // ブラウザに古い結果をキャッシュさせず、毎回必ず最新を取得する
   );
   const text = await res.text();
 
   // サーバー側がエラーを返した場合はJSON（{"error": "..."}）になっている
   if (text.trim().startsWith("{")) {
+    let json;
     try {
-      const json = JSON.parse(text);
-      if (json.error) throw new Error(json.error);
+      json = JSON.parse(text);
     } catch (e) {
-      // JSONとして壊れている場合はそのままCSVとして扱う（通常は起きない）
+      throw new Error("お知らせデータの形式が正しくありません。");
     }
+    if (json.error) throw new Error(json.error);
+  }
+
+  // HTMLやJavaScriptのエラー応答をCSVとして画面へ表示しない
+  if (/^(?:<!doctype|<html|<script|(?:const|let|var|function)\s)/i.test(text.trimStart())) {
+    throw new Error("お知らせデータの形式が正しくありません。");
   }
 
   return text;
@@ -1151,7 +1157,9 @@ function openNotice(title, date, time, body) {
   document.getElementById("detailDate").textContent = time
     ? `${date} ${time}`
     : date;
-  document.getElementById("detailBody").innerHTML = body;
+  const detailBody = document.getElementById("detailBody");
+  detailBody.textContent = body;
+  detailBody.style.whiteSpace = "pre-wrap";
 }
 
 function backNoticeList() {
@@ -1263,8 +1271,6 @@ async function loadNotices() {
 
       const isNew = !readNotices.includes(id);
 
-      const newBadge = isNew ? '<span class="new-badge">新着</span>' : "";
-
       // リンクが添付されている場合のみ、タイトルを押すと直接リンク先へ移動する
       // http(s):// が無く www. から始まる場合や、大文字混じりのHTTPにも対応する
       const normalizedFile = file.toLowerCase();
@@ -1276,31 +1282,47 @@ async function loadNotices() {
         ? toDirectPdfUrl(`https://${file}`)
         : toDirectPdfUrl(file);
 
-      // アイコンも「実際にリンクとして機能する場合」だけ表示する
-      const pdfIcon = isLink
-        ? '<span class="material-icons notice-pdf-icon">picture_as_pdf</span>'
-        : "";
-
-      const titleHtml = isLink
-        ? `<a href="${linkHref}" target="_blank" rel="noopener" class="notice-title-link">${title}</a>`
-        : title;
-
       const item = document.createElement("div");
       item.className = "notice-item";
 
-      item.innerHTML = `
-    <div class="notice-date">
-      ${date}${time ? " " + time : ""} ${pdfIcon} ${newBadge}
-    </div>
+      const dateElement = document.createElement("div");
+      dateElement.className = "notice-date";
+      dateElement.textContent = `${date}${time ? " " + time : ""}`;
 
-    <div class="notice-title">
-      ${titleHtml}
-    </div>
-  `;
+      if (isLink) {
+        const pdfIcon = document.createElement("span");
+        pdfIcon.className = "material-icons notice-pdf-icon";
+        pdfIcon.textContent = "picture_as_pdf";
+        dateElement.append(" ", pdfIcon);
+      }
+
+      if (isNew) {
+        const newBadge = document.createElement("span");
+        newBadge.className = "new-badge";
+        newBadge.textContent = "新着";
+        dateElement.append(" ", newBadge);
+      }
+
+      const titleElement = document.createElement("div");
+      titleElement.className = "notice-title";
+      let titleLink = null;
+
+      if (isLink) {
+        titleLink = document.createElement("a");
+        titleLink.href = linkHref;
+        titleLink.target = "_blank";
+        titleLink.rel = "noopener";
+        titleLink.className = "notice-title-link";
+        titleLink.textContent = title;
+        titleElement.appendChild(titleLink);
+      } else {
+        titleElement.textContent = title;
+      }
+
+      item.append(dateElement, titleElement);
 
       // タイトルの添付リンクを直接開いた場合も、行クリック時と同様に既読へ更新する
       if (isLink) {
-        const titleLink = item.querySelector(".notice-title-link");
         titleLink.addEventListener("click", (event) => {
           event.stopPropagation();
 
