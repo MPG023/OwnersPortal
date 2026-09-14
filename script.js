@@ -90,6 +90,8 @@ async function fetchSecureCsv(type) {
 let readNotices = [];
 let currentUserUid = null;
 let currentUserEmail = null;
+let noticeLoading = false;
+let noticeRefreshTimerId = null;
 
 // ===== CSVパース（ダブルクォート内の改行・カンマに対応） =====
 // スプレッドシートのセルに長文（改行やカンマを含む文章）を入れても、
@@ -612,10 +614,16 @@ firebase.auth().onAuthStateChanged(async (user) => {
     loadUserProfile(user);
     await loadReadNotices(user.uid); // 既読状態を先に読み込んでから
     preloadAllData(); // ログイン直後に全データを先読みしておく
-    setInterval(loadNotices, 30000);
+    // 認証状態の再通知時にもタイマーを重複させない
+    if (noticeRefreshTimerId) clearInterval(noticeRefreshTimerId);
+    noticeRefreshTimerId = setInterval(loadNotices, 30000);
     backHome();
     resetLogoutTimer();
   } else {
+    if (noticeRefreshTimerId) {
+      clearInterval(noticeRefreshTimerId);
+      noticeRefreshTimerId = null;
+    }
     currentUserUid = null;
     localStorage.removeItem("loggedIn");
     document.getElementById("loginPage").style.display = "flex";
@@ -1208,15 +1216,30 @@ async function markNoticeAsRead(id) {
 }
 
 async function loadNotices() {
+  // 通信が30秒を超えても、前回の取得結果が新しい表示を上書きしないようにする
+  if (noticeLoading) return;
+
   const list = document.getElementById("noticeList");
   if (!list) return;
 
-  list.innerHTML = "読み込み中...";
+  noticeLoading = true;
+
+  // すでに表示中の内容は、更新失敗時にも消さない
+  if (!list.children.length) list.textContent = "読み込み中...";
 
   try {
     const text = await fetchSecureCsv("notices");
 
-    const rows = parseCSV(text).slice(1).reverse();
+    const parsedRows = parseCSV(text);
+    // APIのエラー文やHTMLをお知らせCSVとして表示・件数計上しない
+    if (!parsedRows.length || parsedRows[0].length < 7) {
+      throw new Error("お知らせデータの形式が正しくありません。");
+    }
+
+    const rows = parsedRows
+      .slice(1)
+      .filter((cols) => cols.some((value) => String(value).trim() !== ""))
+      .reverse();
 
     list.innerHTML = "";
 
@@ -1259,7 +1282,7 @@ async function loadNotices() {
         : "";
 
       const titleHtml = isLink
-        ? `<a href="${linkHref}" target="_blank" rel="noopener" class="notice-title-link" onclick="event.stopPropagation()">${title}</a>`
+        ? `<a href="${linkHref}" target="_blank" rel="noopener" class="notice-title-link">${title}</a>`
         : title;
 
       const item = document.createElement("div");
@@ -1274,6 +1297,18 @@ async function loadNotices() {
       ${titleHtml}
     </div>
   `;
+
+      // タイトルの添付リンクを直接開いた場合も、行クリック時と同様に既読へ更新する
+      if (isLink) {
+        const titleLink = item.querySelector(".notice-title-link");
+        titleLink.addEventListener("click", (event) => {
+          event.stopPropagation();
+
+          if (!readNotices.includes(id)) {
+            markNoticeAsRead(id).then(loadNotices);
+          }
+        });
+      }
 
       item.onclick = async () => {
         if (!readNotices.includes(id)) {
@@ -1293,7 +1328,9 @@ async function loadNotices() {
     });
   } catch (e) {
     console.error(e);
-    list.innerHTML = "読み込みに失敗しました。";
+    if (!list.children.length) list.textContent = "読み込みに失敗しました。";
+  } finally {
+    noticeLoading = false;
   }
 }
 
