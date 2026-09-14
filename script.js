@@ -171,7 +171,7 @@ const properties = {
     owner: "小松 　宗夫",
 
     contract: "自主管理/一部不動産仲介",
-    office: "-",
+    office: "塩尻",
     staff: "小松　泰輝",
     salesstaff: "-",
     inspectionDate: "2026/09/08",
