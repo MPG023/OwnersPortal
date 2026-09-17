@@ -2211,7 +2211,8 @@ div {
 
   font-size: 14px;
   font-weight: 900;
-  font-family: "Arial Black", Arial, sans-serif;
+  font-family: "Arial Black", Arial, sans-serif !important;
+  font-synthesis: none;
 
   line-height: 1;
   padding: 0;
