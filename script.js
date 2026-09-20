@@ -1263,7 +1263,14 @@ function openNotice(title, date, time, body) {
   document.getElementById("detailDate").textContent = time
     ? `${date} ${time}`
     : date;
-  document.getElementById("detailBody").innerHTML = body;
+
+  // お知らせ本文の改行は「別のお知らせ」として扱わず、詳細画面内の改行として表示する。
+  // innerHTMLではなくtextContentを使うことで、本文中のHTML文字列も誤って実行しない。
+  const detailBody = document.getElementById("detailBody");
+  if (detailBody) {
+    detailBody.textContent = body || "";
+    detailBody.style.whiteSpace = "pre-wrap";
+  }
 }
 
 function backNoticeList() {
@@ -1336,7 +1343,40 @@ async function loadNotices() {
   try {
     const text = await fetchSecureCsv("notices");
 
-    const rows = parseCSV(text).slice(1).reverse();
+    // CSV上で本文の改行がダブルクォートされていない場合でも、
+    // 本文の続きが別のお知らせとして一覧に分裂しないように行を復元する。
+    const parsedRows = parseCSV(text);
+    if (!parsedRows.length || parsedRows[0].length < 7) {
+      throw new Error("お知らせデータの形式が正しくありません。");
+    }
+
+    const header = parsedRows[0];
+    const noticeRows = [];
+    let currentRow = null;
+
+    parsedRows.slice(1).forEach((cols) => {
+      const values = cols.map((value) => String(value ?? ""));
+      const looksLikeNoticeRow =
+        values.length >= header.length &&
+        (values[4] || values[5] || values[6]);
+
+      if (looksLikeNoticeRow || !currentRow) {
+        if (currentRow) noticeRows.push(currentRow);
+        currentRow = values.slice();
+      } else {
+        // 本文（3列目）の途中で改行された行は、前のお知らせ本文へ戻す。
+        const continuation = values.join(",");
+        currentRow[2] = currentRow[2]
+          ? `${currentRow[2]}\n${continuation}`
+          : continuation;
+      }
+    });
+
+    if (currentRow) noticeRows.push(currentRow);
+
+    const rows = noticeRows
+      .filter((cols) => cols.some((value) => String(value).trim() !== ""))
+      .reverse();
 
     list.innerHTML = "";
 
