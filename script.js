@@ -68,25 +68,19 @@ async function fetchSecureCsv(type) {
   const res = await fetch(
     `${SECURE_API_URL}?idToken=${encodeURIComponent(
       idToken
-    )}&type=${encodeURIComponent(type)}&ts=${Date.now()}`,
+    )}&type=${encodeURIComponent(type)}`,
     { cache: "no-store" } // ブラウザに古い結果をキャッシュさせず、毎回必ず最新を取得する
   );
   const text = await res.text();
 
   // サーバー側がエラーを返した場合はJSON（{"error": "..."}）になっている
   if (text.trim().startsWith("{")) {
-    let json;
     try {
-      json = JSON.parse(text);
+      const json = JSON.parse(text);
+      if (json.error) throw new Error(json.error);
     } catch (e) {
-      throw new Error("お知らせデータの形式が正しくありません。");
+      // JSONとして壊れている場合はそのままCSVとして扱う（通常は起きない）
     }
-    if (json.error) throw new Error(json.error);
-  }
-
-  // HTMLやJavaScriptのエラー応答をCSVとして画面へ表示しない
-  if (/^(?:<!doctype|<html|<script|(?:const|let|var|function)\s)/i.test(text.trimStart())) {
-    throw new Error("お知らせデータの形式が正しくありません。");
   }
 
   return text;
@@ -96,8 +90,6 @@ async function fetchSecureCsv(type) {
 let readNotices = [];
 let currentUserUid = null;
 let currentUserEmail = null;
-let noticeLoading = false;
-let noticeRefreshTimerId = null;
 
 // ===== CSVパース（ダブルクォート内の改行・カンマに対応） =====
 // スプレッドシートのセルに長文（改行やカンマを含む文章）を入れても、
@@ -158,10 +150,10 @@ const properties = {
     owner: "小松 　宗夫",
 
     contract: "フルパッケージ",
-    office: "松本営業所",
+    office: "松本",
     staff: "鈴木  　康治",
     inspectionDate: "2026/08/06",
-    cleaningDate: "2026/09/01",
+    cleaningDate: "2026/07/24",
     contractDate: "2025/02/20",
     completion: "2026/01/31",
     totalBuildings: "",
@@ -169,7 +161,7 @@ const properties = {
     occupiedUnits: "8戸",
     moveOut: "0戸",
     futureOccupied: "8戸",
-    futureRate: "100%"
+    futureRate: "87.5%"
   },
 
   小松住宅: {
@@ -179,19 +171,19 @@ const properties = {
     owner: "小松 　宗夫",
 
     contract: "自主管理/一部不動産仲介",
-    office: "塩尻営業所",
+    office: "-",
     staff: "小松　泰輝",
     salesstaff: "-",
-    inspectionDate: "2026/09/08",
-    cleaningDate: "-",
+    inspectionDate: "2026/07/30",
+    cleaningDate: "2026/07/17",
     contractDate: "-",
-    completion: "1982/10/25",
+    completion: "1982/10/11",
     totalBuildings: "4戸",
     totalUnits: "4戸",
     occupiedUnits: "4戸",
     moveOut: "0戸",
     futureOccupied: "4戸",
-    futureRate: "100%"
+    futureRate: "87.5%"
   }
 };
 
@@ -364,22 +356,126 @@ function resetLogoutTimer() {
   logoutTimer = setTimeout(handleInactivityTimeout, LOGOUT_TIMEOUT_MS);
 }
 
-function handleInactivityTimeout() {
-  auth.signOut().catch((error) => {
-    console.error(error);
-  });
+let timeoutPageLocked = false;
+
+async function handleInactivityTimeout() {
+  if (timeoutPageLocked) return;
+
+  // ログアウト処理中もポータル画面へ戻らないよう、先にロックする。
+  timeoutPageLocked = true;
+
+  if (logoutTimer) {
+    clearTimeout(logoutTimer);
+    logoutTimer = null;
+  }
+
+  // Firebase側のログアウト完了を待ってから、切断画面を表示する。
+  try {
+    await auth.signOut();
+
+    if (auth.currentUser !== null) {
+      throw new Error("Firebaseのログアウト完了を確認できませんでした。");
+    }
+  } catch (error) {
+    console.error("自動ログアウトに失敗しました。再試行します。", error);
+
+    try {
+      await auth.signOut();
+    } catch (retryError) {
+      console.error("自動ログアウトの再試行にも失敗しました。", retryError);
+    }
+
+    if (auth.currentUser !== null) {
+      console.error("Firebaseのログアウト状態を確認できないため、ポータル画面は表示しません。");
+    }
+  }
 
   localStorage.removeItem("loggedIn");
 
-  document.getElementById("portal").style.display = "none";
-  document.getElementById("loginPage").style.display = "none";
-  document.getElementById("timeoutPage").style.display = "block";
+  const portal = document.getElementById("portal");
+  const loginPage = document.getElementById("loginPage");
+  const timeoutPage = document.getElementById("timeoutPage");
+
+  if (portal) portal.style.display = "none";
+  if (loginPage) loginPage.style.display = "none";
+
+  if (timeoutPage) {
+    timeoutPage.style.display = "block";
+    timeoutPage.style.overflow = "hidden";
+  }
 }
 
-function goToLoginFromTimeout() {
-  document.getElementById("timeoutPage").style.display = "none";
-  document.getElementById("loginPage").style.display = "flex";
+async function goToLoginFromTimeout() {
+  // ボタンを押した時点でも、Firebase側のログアウト状態をもう一度確認する。
+  try {
+    if (auth.currentUser !== null) {
+      await auth.signOut();
+    }
+  } catch (error) {
+    console.error("ログイン画面へ戻る前のログアウトに失敗しました。", error);
+    return;
+  }
+
+  if (auth.currentUser !== null) {
+    console.error("Firebaseのログアウト完了を確認できないため、ログイン画面へは移動しません。");
+    return;
+  }
+
+  localStorage.removeItem("loggedIn");
+  timeoutPageLocked = false;
+
+  const timeoutPage = document.getElementById("timeoutPage");
+  const loginPage = document.getElementById("loginPage");
+
+  if (timeoutPage) {
+    timeoutPage.style.display = "none";
+    timeoutPage.style.overflow = "";
+  }
+
+  if (loginPage) loginPage.style.display = "flex";
 }
+
+// タイムアウト画面では「ログイン画面へ」ボタン以外の操作をすべて無効化する。
+// Enterキーなどでログイン処理が勝手に実行されることも防ぐ。
+["click", "mousedown", "mouseup", "pointerdown", "pointerup", "touchstart", "touchend", "wheel", "scroll", "contextmenu"].forEach(
+  (eventName) => {
+    document.addEventListener(
+      eventName,
+      (event) => {
+        if (!timeoutPageLocked) return;
+
+        const timeoutPage = document.getElementById("timeoutPage");
+        if (!timeoutPage || timeoutPage.style.display === "none") return;
+
+        const target = event.target;
+        const loginButton =
+          target && target.closest ? target.closest(".timeout-btn") : null;
+
+        if (loginButton && timeoutPage.contains(loginButton)) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+      },
+      true
+    );
+  }
+);
+
+document.addEventListener(
+  "keydown",
+  (event) => {
+    if (!timeoutPageLocked) return;
+
+    const timeoutPage = document.getElementById("timeoutPage");
+    if (!timeoutPage || timeoutPage.style.display === "none") return;
+
+    event.preventDefault();
+    event.stopPropagation();
+  },
+  true
+);
 
 // ログイン中のみ、操作があるたびに自動ログアウトのタイマーをリセットする
 ["mousemove", "mousedown", "keydown", "touchstart", "scroll"].forEach(
@@ -608,6 +704,13 @@ async function preloadAllData() {
 
 firebase.auth().onAuthStateChanged(async (user) => {
   if (user) {
+    // タイムアウト画面がロック中は、Firebaseの状態変化だけでポータルへ戻さない。
+    if (timeoutPageLocked) {
+      document.getElementById("portal").style.display = "none";
+      document.getElementById("loginPage").style.display = "none";
+      return;
+    }
+
     console.log("UID:", user.uid);
 
     localStorage.setItem("loggedIn", "true");
@@ -620,18 +723,21 @@ firebase.auth().onAuthStateChanged(async (user) => {
     loadUserProfile(user);
     await loadReadNotices(user.uid); // 既読状態を先に読み込んでから
     preloadAllData(); // ログイン直後に全データを先読みしておく
-    // 認証状態の再通知時にもタイマーを重複させない
-    if (noticeRefreshTimerId) clearInterval(noticeRefreshTimerId);
-    noticeRefreshTimerId = setInterval(loadNotices, 30000);
+    initForegroundPushHandler();
+    setInterval(loadNotices, 30000);
     backHome();
     resetLogoutTimer();
   } else {
-    if (noticeRefreshTimerId) {
-      clearInterval(noticeRefreshTimerId);
-      noticeRefreshTimerId = null;
-    }
     currentUserUid = null;
     localStorage.removeItem("loggedIn");
+
+    // タイムアウト処理中は、認証状態がnullになった瞬間に通常のログイン画面を表示しない。
+    if (timeoutPageLocked) {
+      document.getElementById("loginPage").style.display = "none";
+      document.getElementById("portal").style.display = "none";
+      return;
+    }
+
     document.getElementById("loginPage").style.display = "flex";
     document.getElementById("portal").style.display = "none";
   }
@@ -1157,9 +1263,7 @@ function openNotice(title, date, time, body) {
   document.getElementById("detailDate").textContent = time
     ? `${date} ${time}`
     : date;
-  const detailBody = document.getElementById("detailBody");
-  detailBody.textContent = body;
-  detailBody.style.whiteSpace = "pre-wrap";
+  document.getElementById("detailBody").innerHTML = body;
 }
 
 function backNoticeList() {
@@ -1224,30 +1328,15 @@ async function markNoticeAsRead(id) {
 }
 
 async function loadNotices() {
-  // 通信が30秒を超えても、前回の取得結果が新しい表示を上書きしないようにする
-  if (noticeLoading) return;
-
   const list = document.getElementById("noticeList");
   if (!list) return;
 
-  noticeLoading = true;
-
-  // すでに表示中の内容は、更新失敗時にも消さない
-  if (!list.children.length) list.textContent = "読み込み中...";
+  list.innerHTML = "読み込み中...";
 
   try {
     const text = await fetchSecureCsv("notices");
 
-    const parsedRows = parseCSV(text);
-    // APIのエラー文やHTMLをお知らせCSVとして表示・件数計上しない
-    if (!parsedRows.length || parsedRows[0].length < 7) {
-      throw new Error("お知らせデータの形式が正しくありません。");
-    }
-
-    const rows = parsedRows
-      .slice(1)
-      .filter((cols) => cols.some((value) => String(value).trim() !== ""))
-      .reverse();
+    const rows = parseCSV(text).slice(1).reverse();
 
     list.innerHTML = "";
 
@@ -1271,6 +1360,8 @@ async function loadNotices() {
 
       const isNew = !readNotices.includes(id);
 
+      const newBadge = isNew ? '<span class="new-badge">新着</span>' : "";
+
       // リンクが添付されている場合のみ、タイトルを押すと直接リンク先へ移動する
       // http(s):// が無く www. から始まる場合や、大文字混じりのHTTPにも対応する
       const normalizedFile = file.toLowerCase();
@@ -1282,55 +1373,27 @@ async function loadNotices() {
         ? toDirectPdfUrl(`https://${file}`)
         : toDirectPdfUrl(file);
 
+      // アイコンも「実際にリンクとして機能する場合」だけ表示する
+      const pdfIcon = isLink
+        ? '<span class="material-icons notice-pdf-icon">picture_as_pdf</span>'
+        : "";
+
+      const titleHtml = isLink
+        ? `<a href="${linkHref}" target="_blank" rel="noopener" class="notice-title-link" onclick="event.stopPropagation()">${title}</a>`
+        : title;
+
       const item = document.createElement("div");
       item.className = "notice-item";
 
-      const dateElement = document.createElement("div");
-      dateElement.className = "notice-date";
-      dateElement.textContent = `${date}${time ? " " + time : ""}`;
+      item.innerHTML = `
+    <div class="notice-date">
+      ${date}${time ? " " + time : ""} ${pdfIcon} ${newBadge}
+    </div>
 
-      if (isLink) {
-        const pdfIcon = document.createElement("span");
-        pdfIcon.className = "material-icons notice-pdf-icon";
-        pdfIcon.textContent = "picture_as_pdf";
-        dateElement.append(" ", pdfIcon);
-      }
-
-      if (isNew) {
-        const newBadge = document.createElement("span");
-        newBadge.className = "new-badge";
-        newBadge.textContent = "新着";
-        dateElement.append(" ", newBadge);
-      }
-
-      const titleElement = document.createElement("div");
-      titleElement.className = "notice-title";
-      let titleLink = null;
-
-      if (isLink) {
-        titleLink = document.createElement("a");
-        titleLink.href = linkHref;
-        titleLink.target = "_blank";
-        titleLink.rel = "noopener";
-        titleLink.className = "notice-title-link";
-        titleLink.textContent = title;
-        titleElement.appendChild(titleLink);
-      } else {
-        titleElement.textContent = title;
-      }
-
-      item.append(dateElement, titleElement);
-
-      // タイトルの添付リンクを直接開いた場合も、行クリック時と同様に既読へ更新する
-      if (isLink) {
-        titleLink.addEventListener("click", (event) => {
-          event.stopPropagation();
-
-          if (!readNotices.includes(id)) {
-            markNoticeAsRead(id).then(loadNotices);
-          }
-        });
-      }
+    <div class="notice-title">
+      ${titleHtml}
+    </div>
+  `;
 
       item.onclick = async () => {
         if (!readNotices.includes(id)) {
@@ -1350,9 +1413,7 @@ async function loadNotices() {
     });
   } catch (e) {
     console.error(e);
-    if (!list.children.length) list.textContent = "読み込みに失敗しました。";
-  } finally {
-    noticeLoading = false;
+    list.innerHTML = "読み込みに失敗しました。";
   }
 }
 
@@ -2179,9 +2240,7 @@ function renderSettingsPage() {
 
   const pushToggle = document.getElementById("pushToggle");
   if (pushToggle) {
-    OneSignal.User.PushSubscription.optedIn
-      ? (pushToggle.checked = true)
-      : (pushToggle.checked = false);
+    pushToggle.checked = !!localStorage.getItem(PUSH_TOKEN_STORED_KEY);
   }
 
   const pushMsgEl = document.getElementById("settingsPushMessage");
@@ -2237,9 +2296,31 @@ function clearRememberedLoginFromSettings() {
   }
 }
 
-// ===== プッシュ通知（OneSignal経由） =====
-// FCM直接連携は複雑すぎたため廃止し、OneSignalのSDKを使う方式に変更した。
-// 購読者の管理はOneSignal側が自動で行うため、独自のトークン登録処理は不要。
+// ===== プッシュ通知 =====
+//
+// Firebaseプロジェクトの「Cloud Messaging」設定画面で発行できる
+// 「ウェブプッシュ証明書（VAPIDキー）」をここに貼り付けてください。
+// Firebaseコンソール →プロジェクトの設定→Cloud Messaging タブ→
+// 「ウェブの構成」内の「鍵ペアを生成」で発行できます。
+const VAPID_KEY = "BJv1DRmdrNDSVZCvRwZ0garjjp4OSq67tNFamrdRlf4A0j_gz_394seBgEm3CBC0QBXdVC8iYXvTfoBVIEmwEFU";
+
+const PUSH_DEVICE_ID_KEY = "pushDeviceId";
+const PUSH_TOKEN_STORED_KEY = "pushTokenRegistered";
+
+// この端末を識別するための、ランダムなIDを1つ発行して保存しておく
+// （同じ端末で何度もON/OFFしても、常に同じ端末として扱えるようにする）
+function getOrCreateDeviceId() {
+  let id = localStorage.getItem(PUSH_DEVICE_ID_KEY);
+  if (!id) {
+    id =
+      "device_" +
+      Date.now().toString(36) +
+      "_" +
+      Math.random().toString(36).slice(2, 10);
+    localStorage.setItem(PUSH_DEVICE_ID_KEY, id);
+  }
+  return id;
+}
 
 // iOSのSafariは「ホーム画面に追加」した状態（PWA起動）でないと通知を受け取れない
 function isIOS() {
@@ -2286,16 +2367,36 @@ async function enablePushNotifications() {
     return false;
   }
 
-  try {
-    await OneSignal.Notifications.requestPermission();
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    setPushMessage("お使いのブラウザは通知に対応していません。", "error");
+    return false;
+  }
 
-    if (Notification.permission !== "granted") {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
       setPushMessage("通知が許可されませんでした。", "error");
       return false;
     }
 
-    await OneSignal.User.PushSubscription.optIn();
+    const registration = await navigator.serviceWorker.register(
+      "firebase-messaging-sw.js"
+    );
 
+    const messaging = firebase.messaging();
+    const token = await messaging.getToken({
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: registration
+    });
+
+    if (!token) {
+      setPushMessage("通知用のトークンを取得できませんでした。", "error");
+      return false;
+    }
+
+    await registerPushToken(token);
+
+    localStorage.setItem(PUSH_TOKEN_STORED_KEY, token);
     setPushMessage("この端末への通知をONにしました。", "success");
     return true;
   } catch (e) {
@@ -2307,11 +2408,83 @@ async function enablePushNotifications() {
 
 async function disablePushNotifications() {
   try {
-    await OneSignal.User.PushSubscription.optOut();
+    const token = localStorage.getItem(PUSH_TOKEN_STORED_KEY);
+
+    if (token) {
+      await unregisterPushToken(token);
+    }
+
+    try {
+      const messaging = firebase.messaging();
+      await messaging.deleteToken();
+    } catch (e) {
+      // すでに無効化されている場合などはここに来るが、実害はないので無視する
+    }
+
+    localStorage.removeItem(PUSH_TOKEN_STORED_KEY);
     setPushMessage("この端末への通知をOFFにしました。", "success");
   } catch (e) {
     console.error("プッシュ通知の無効化に失敗しました：", e);
     setPushMessage("通知の解除に失敗しました：" + e.message, "error");
+  }
+}
+
+// 通知用トークンをApps Script経由でスプレッドシートに登録する
+async function registerPushToken(token) {
+  const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+  if (!idToken) throw new Error("ログインしていません");
+
+  const res = await fetch(SECURE_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({
+      action: "registerPushToken",
+      idToken,
+      token,
+      deviceId: getOrCreateDeviceId(),
+      userAgent: navigator.userAgent
+    })
+  });
+
+  const json = await res.json();
+  if (json.error) throw new Error(json.error);
+}
+
+// 通知用トークンの登録を解除する
+async function unregisterPushToken(token) {
+  const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+  if (!idToken) return;
+
+  try {
+    await fetch(SECURE_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        action: "unregisterPushToken",
+        idToken,
+        token
+      })
+    });
+  } catch (e) {
+    console.error("トークンの解除リクエストに失敗しました：", e);
+  }
+}
+
+// アプリを開いている最中に通知が届いた場合、ブラウザ標準の通知が出ないため、
+// 簡易的な案内を表示する（お知らせ一覧は次回のポーリングで自動更新される）
+function initForegroundPushHandler() {
+  try {
+    if (!firebase.messaging.isSupported()) return;
+    const messaging = firebase.messaging();
+    messaging.onMessage((payload) => {
+      const title =
+        (payload.notification && payload.notification.title) || "お知らせ";
+      const body = (payload.notification && payload.notification.body) || "";
+      console.log("フォアグラウンドで通知を受信：", title, body);
+      loadNotices();
+    });
+  } catch (e) {
+    // 未対応ブラウザ等はここで静かに諦める
   }
 }
 
@@ -2734,6 +2907,13 @@ function renderPayments() {
 }
 
 function updateButtons() {
+  const months = [...new Set(allPayments.map((x) => x.month))];
+
+  const prevKey =
+    currentMonth === 1
+      ? `${currentYear - 1}-12`
+      : `${currentYear}-${String(currentMonth - 1).padStart(2, "0")}`;
+
   const nextKey =
     currentMonth === 12
       ? `${currentYear + 1}-01`
@@ -2745,10 +2925,8 @@ function updateButtons() {
     today.getMonth() + 2
   ).padStart(2, "0")}`; // 今日の月の1ヶ月後
 
-  // 前月へは、支払いデータの有無にかかわらず掲載開始月まで戻れるようにする。
-  // データが無い月は「該当データがありません」と表示される。
-  const currentKey = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
-  document.getElementById("prevMonthBtn").disabled = currentKey <= "2026-01";
+  // 前月にデータが無い場合はボタンを無効化する
+  document.getElementById("prevMonthBtn").disabled = !months.includes(prevKey);
 
   // 次月は、「今日の月+1」を超えて進めないようにする
   document.getElementById("nextMonthBtn").disabled = nextKey > maxKey;
@@ -2809,92 +2987,6 @@ document.getElementById("nextMonthBtn").onclick = () => {
 
   renderPaymentsWithLoading();
 };
-
-// ===== 月々のお支払い：年月選択カレンダー =====
-
-let pickerYear = 2026;
-
-function openMonthPicker() {
-  pickerYear = currentYear;
-  renderMonthPicker();
-
-  const modal = document.getElementById("monthPickerModal");
-  if (modal) modal.classList.add("open");
-}
-
-function closeMonthPicker() {
-  const modal = document.getElementById("monthPickerModal");
-  if (modal) modal.classList.remove("open");
-}
-
-function changePickerYear(diff) {
-  pickerYear += diff;
-  renderMonthPicker();
-}
-
-// 選択できる範囲（前月・次月ボタンと同じルール：2026年1月〜今月の翌月まで）
-function getSelectableRange() {
-  const limit = new Date();
-  limit.setMonth(limit.getMonth() + 1);
-  return {
-    minYear: 2026,
-    minMonth: 1,
-    maxYear: limit.getFullYear(),
-    maxMonth: limit.getMonth() + 1
-  };
-}
-
-function renderMonthPicker() {
-  const yearEl = document.getElementById("monthPickerYear");
-  const gridEl = document.getElementById("monthPickerGrid");
-  if (!yearEl || !gridEl) return;
-
-  yearEl.textContent = `${pickerYear}年`;
-
-  const range = getSelectableRange();
-
-  // データがある月は見た目で分かるようにする
-  const availableMonths = new Set(allPayments.map((x) => x.month));
-
-  let html = "";
-  for (let m = 1; m <= 12; m++) {
-    const key = `${pickerYear}-${String(m).padStart(2, "0")}`;
-
-    const tooOld =
-      pickerYear < range.minYear ||
-      (pickerYear === range.minYear && m < range.minMonth);
-    const tooNew =
-      pickerYear > range.maxYear ||
-      (pickerYear === range.maxYear && m > range.maxMonth);
-
-    const disabled = tooOld || tooNew;
-    const isCurrent = pickerYear === currentYear && m === currentMonth;
-    const hasData = availableMonths.has(key);
-
-    const classes = [
-      "month-picker-cell",
-      disabled ? "disabled" : "",
-      isCurrent ? "current" : "",
-      hasData ? "has-data" : ""
-    ]
-      .filter(Boolean)
-      .join(" ");
-
-    html += `<button class="${classes}" ${
-      disabled ? "disabled" : `onclick="selectPickerMonth(${m})"`
-    }>${m}月</button>`;
-  }
-
-  gridEl.innerHTML = html;
-}
-
-function selectPickerMonth(m) {
-  currentYear = pickerYear;
-  currentMonth = m;
-
-  closeMonthPicker();
-  renderPaymentsWithLoading();
-}
 
 // ===== 年間収支内訳書 =====
 
