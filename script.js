@@ -177,7 +177,7 @@ const properties = {
     inspectionDate: "2026/09/21",
     cleaningDate: "2026/09/19",
     contractDate: "-",
-    completion: "1982/10/11",
+    completion: "1982/10/25",
     totalBuildings: "4戸",
     totalUnits: "4戸",
     occupiedUnits: "4戸",
