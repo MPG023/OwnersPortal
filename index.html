@@ -16,6 +16,7 @@
 (function () {
   const measurementId = 'G-DFJD58B505';
   const storageKey = 'ownersPortalAnalyticsConsent';
+  const debugMode = new URLSearchParams(window.location.search).get('ga_debug') === '1';
   const deniedConsent = {
     ad_storage: 'denied',
     analytics_storage: 'denied',
@@ -33,6 +34,8 @@
   const disableFlag = 'ga-disable-' + measurementId;
   window[disableFlag] = true;
   let analyticsInitialized = false;
+  let analyticsScriptLoaded = false;
+  let analyticsLoading = false;
 
   function renderConsentUi() {
     const banner = document.getElementById('cookieConsentBanner');
@@ -43,17 +46,37 @@
     launcher.hidden = needsChoice;
   }
 
+  function initializeAnalytics() {
+    if (choice !== 'granted' || analyticsInitialized) return;
+    gtag('config', measurementId, { send_page_view: false });
+    gtag('event', 'page_view', debugMode ? { debug_mode: true } : {});
+    analyticsInitialized = true;
+  }
+
   function loadAnalyticsAfterConsent() {
     window[disableFlag] = false;
     gtag('consent', 'update', { analytics_storage: 'granted' });
-    if (analyticsInitialized) return;
+    if (analyticsInitialized || analyticsLoading) return;
+    if (analyticsScriptLoaded) {
+      initializeAnalytics();
+      return;
+    }
+
     gtag('js', new Date());
-    gtag('config', measurementId);
     const script = document.createElement('script');
     script.async = true;
     script.src = 'https://www.googletagmanager.com/gtag/js?id=' + measurementId;
+    analyticsLoading = true;
+    script.onload = function () {
+      analyticsLoading = false;
+      analyticsScriptLoaded = true;
+      initializeAnalytics();
+    };
+    script.onerror = function () {
+      analyticsLoading = false;
+      console.error('Google Analytics の読み込みに失敗しました。');
+    };
     document.head.appendChild(script);
-    analyticsInitialized = true;
   }
 
   function saveChoice(nextChoice) {
