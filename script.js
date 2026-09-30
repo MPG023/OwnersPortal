@@ -163,7 +163,7 @@ const properties = {
     contract: "フルパッケージ",
     office: "松本",
     staff: "鈴木  　康治",
-    inspectionDate: "2026/08/06",
+    inspectionDate: "2026/09/29",
     cleaningDate: "2026/09/01",
     contractDate: "2025/02/20",
     completion: "2026/01/31",
