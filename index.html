@@ -33,8 +33,7 @@
   try { choice = localStorage.getItem(storageKey); } catch (error) { /* Storage may be unavailable. */ }
   const disableFlag = 'ga-disable-' + measurementId;
   window[disableFlag] = true;
-  let analyticsInitialized = false;
-  let pageViewSent = false;
+  let analyticsConfigured = false;
   let analyticsScriptLoaded = false;
   let analyticsLoading = false;
 
@@ -47,40 +46,23 @@
     launcher.hidden = needsChoice;
   }
 
-  function initializeAnalytics() {
-    if (choice !== 'granted') return;
+  function configureAnalytics() {
+    if (choice !== 'granted' || analyticsConfigured) return;
 
-    if (!analyticsInitialized) {
-      gtag('config', measurementId, Object.assign(
-        { send_page_view: false },
-        debugMode ? { debug_mode: true } : {}
-      ));
-      analyticsInitialized = true;
-    }
-
-    if (!pageViewSent) {
-      gtag('event', 'page_view', Object.assign(
-        { send_to: measurementId },
-        debugMode ? { debug_mode: true } : {}
-      ));
-      pageViewSent = true;
-    }
+    gtag('js', new Date());
+    gtag('config', measurementId, debugMode ? { debug_mode: true } : {});
+    analyticsConfigured = true;
   }
 
   function loadAnalyticsAfterConsent() {
     window[disableFlag] = false;
     gtag('consent', 'update', { analytics_storage: 'granted' });
-    if (analyticsInitialized) {
-      initializeAnalytics();
-      return;
-    }
-    if (analyticsLoading) return;
+    if (analyticsConfigured || analyticsLoading) return;
     if (analyticsScriptLoaded) {
-      initializeAnalytics();
+      configureAnalytics();
       return;
     }
 
-    gtag('js', new Date());
     const script = document.createElement('script');
     script.async = true;
     script.src = 'https://www.googletagmanager.com/gtag/js?id=' + measurementId;
@@ -88,8 +70,7 @@
     script.onload = function () {
       analyticsLoading = false;
       analyticsScriptLoaded = true;
-      if (choice !== 'granted') return;
-      initializeAnalytics();
+      configureAnalytics();
     };
     script.onerror = function () {
       analyticsLoading = false;
