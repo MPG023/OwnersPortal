@@ -34,6 +34,7 @@
   const disableFlag = 'ga-disable-' + measurementId;
   window[disableFlag] = true;
   let analyticsInitialized = false;
+  let pageViewSent = false;
   let analyticsScriptLoaded = false;
   let analyticsLoading = false;
 
@@ -47,15 +48,33 @@
   }
 
   function initializeAnalytics() {
-    if (choice !== 'granted' || analyticsInitialized) return;
-    gtag('config', measurementId, debugMode ? { debug_mode: true } : {});
-    analyticsInitialized = true;
+    if (choice !== 'granted') return;
+
+    if (!analyticsInitialized) {
+      gtag('config', measurementId, Object.assign(
+        { send_page_view: false },
+        debugMode ? { debug_mode: true } : {}
+      ));
+      analyticsInitialized = true;
+    }
+
+    if (!pageViewSent) {
+      gtag('event', 'page_view', Object.assign(
+        { send_to: measurementId },
+        debugMode ? { debug_mode: true } : {}
+      ));
+      pageViewSent = true;
+    }
   }
 
   function loadAnalyticsAfterConsent() {
     window[disableFlag] = false;
     gtag('consent', 'update', { analytics_storage: 'granted' });
-    if (analyticsInitialized || analyticsLoading) return;
+    if (analyticsInitialized) {
+      initializeAnalytics();
+      return;
+    }
+    if (analyticsLoading) return;
     if (analyticsScriptLoaded) {
       initializeAnalytics();
       return;
