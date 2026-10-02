@@ -49,7 +49,10 @@
   function initializeAnalytics() {
     if (choice !== 'granted' || analyticsInitialized) return;
     gtag('config', measurementId, { send_page_view: false });
-    gtag('event', 'page_view', debugMode ? { debug_mode: true } : {});
+    gtag('event', 'page_view', Object.assign(
+      { send_to: measurementId },
+      debugMode ? { debug_mode: true } : {}
+    ));
     analyticsInitialized = true;
   }
 
@@ -70,6 +73,7 @@
     script.onload = function () {
       analyticsLoading = false;
       analyticsScriptLoaded = true;
+      if (choice !== 'granted') return;
       initializeAnalytics();
     };
     script.onerror = function () {
