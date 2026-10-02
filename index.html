@@ -48,11 +48,7 @@
 
   function initializeAnalytics() {
     if (choice !== 'granted' || analyticsInitialized) return;
-    gtag('config', measurementId, { send_page_view: false });
-    gtag('event', 'page_view', Object.assign(
-      { send_to: measurementId },
-      debugMode ? { debug_mode: true } : {}
-    ));
+    gtag('config', measurementId, debugMode ? { debug_mode: true } : {});
     analyticsInitialized = true;
   }
 
