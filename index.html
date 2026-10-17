@@ -566,6 +566,18 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
         <p id="settingsPasswordMessage" class="settings-message"></p>
       </div>
 
+ <div class="settings-group">
+        <h3>ログイン情報の記憶</h3>
+        <div class="settings-row">
+          <span class="settings-label">状態</span>
+          <span id="settingsRememberStatus" class="settings-value">-</span>
+        </div>
+        <button class="settings-btn settings-btn-outline" onclick="clearRememberedLoginFromSettings()">
+          <span class="material-icons">delete_outline</span>
+          このブラウザの記憶を削除する
+        </button>
+      </div>
+		
       <div class="settings-group">
         <h3>プッシュ通知</h3>
         <p class="settings-desc">
@@ -585,17 +597,20 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
         <p id="settingsPushMessage" class="settings-message"></p>
       </div>
 
-      <div class="settings-group">
-        <h3>ログイン情報の記憶</h3>
+     <!-- 20261017 Cookie設定実装 -->
+
+<div class="settings-group">
+        <h3>Cookie許可設定  【新着機能】</h3>
         <div class="settings-row">
-          <span class="settings-label">状態</span>
-          <span id="settingsRememberStatus" class="settings-value">-</span>
-        </div>
-        <button class="settings-btn settings-btn-outline" onclick="clearRememberedLoginFromSettings()">
-          <span class="material-icons">delete_outline</span>
-          このブラウザの記憶を削除する
-        </button>
-      </div>
+          <span class="settings-label">アクセス状況の把握とサービス改善のため、Google Analyticsを使用します。「Cookieに同意」を選択するまで分析Cookieは使用しません。広告目的のCookieは使用していません。</span>
+<div class="cookie-consent-actions">
+    <button type="button" class="cookie-consent-reject" onclick="setCookieConsent(false)">同意しない</button>
+    <button type="button" class="cookie-consent-accept" onclick="setCookieConsent(true)">Cookieに同意</button>
+  </div>
+</section>
+
+section id="cookieConsentBanner" class="cookie-consent-banner" aria-label="Cookieの同意設定" aria-live="polite">
+  <div class="cookie-consent-copy">
 
       <div class="settings-group">
         <h3>利用規約・プライバシーポリシー</h3>
