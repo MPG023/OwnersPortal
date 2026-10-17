@@ -61,6 +61,56 @@ gtag('js', new Date());
 gtag('config', 'G-DFJD58B505');
 </script><link rel='stylesheet' href='https://fonts.googleapis.com/icon?family=Material+Icons'><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap"><link rel="stylesheet" href="./style.css">
 
+<!-- Googleアナリティクス基本設定 & Cookie同意バナー連動スクリプト -->
+<script async src="https://googletagmanager.com"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+
+  // 初期状態はGoogleアナリティクスをブロック
+  gtag('consent', 'default', {
+    'analytics_storage': 'denied'
+  });
+
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX'); // ※ご自身の測定IDに書き換えてください
+
+  // --- バナーの表示切り替えと連動処理 ---
+  const ANALYTICS_CONSENT_KEY = 'analytics_consent_status';
+  const savedStatus = localStorage.getItem(ANALYTICS_CONSENT_KEY);
+
+  // ページ読み込み時の判定
+  if (savedStatus === 'granted' || savedStatus === 'denied') {
+    document.getElementById('cookieConsentSettings').hidden = false;
+    if (savedStatus === 'granted') {
+      gtag('consent', 'update', { 'analytics_storage': 'granted' });
+    }
+  } else {
+    document.getElementById('cookieConsentBanner').hidden = false;
+  }
+
+  // 「同意する」「同意しない」ボタンが押された時の処理
+  function setCookieConsent(isAccepted) {
+    const status = isAccepted ? 'granted' : 'denied';
+    localStorage.setItem(ANALYTICS_CONSENT_KEY, status);
+    
+    // 同意ステータスをGA4に更新（これでデータが送信されます）
+    gtag('consent', 'update', {
+      'analytics_storage': status
+    });
+
+    document.getElementById('cookieConsentBanner').hidden = true;
+    document.getElementById('cookieConsentSettings').hidden = false;
+  }
+
+  // 設定ボタンが押された時の処理
+  function showCookieConsent() {
+    document.getElementById('cookieConsentBanner').hidden = false;
+    document.getElementById('cookieConsentSettings').hidden = true;
+  }
+</script>
+
+	  
   </head>
     
   <body>
@@ -75,15 +125,6 @@ gtag('config', 'G-DFJD58B505');
     <button type="button" class="cookie-consent-reject" onclick="setCookieConsent(false)">同意しない</button>
     <button type="button" class="cookie-consent-accept" onclick="setCookieConsent(true)">Cookieに同意</button>
   </div>
-</section>
-<button id="cookieConsentSettings" class="cookie-consent-settings" type="button" onclick="showCookieConsent()" hidden>Cookie設定</button>
-<script>
-if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getItem(analyticsConsentKey) === 'denied') {
-  document.getElementById('cookieConsentSettings').hidden = false;
-} else {
-  document.getElementById('cookieConsentBanner').hidden = false;
-}
-</script>
 
 <div id="loginPage" class="login-page">
 
