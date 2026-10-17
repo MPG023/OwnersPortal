@@ -69,11 +69,11 @@ gtag('config', 'G-DFJD58B505');
 <section id="cookieConsentBanner" class="cookie-consent-banner" aria-label="Cookieの同意設定" aria-live="polite" hidden>
   <div class="cookie-consent-copy">
     <strong>Cookieの設定</strong>
-    <p>アクセス状況の把握とサービス改善のため、Google Analyticsを使用します。「分析Cookieに同意」を選択するまで分析Cookieは使用しません。広告目的のCookieは使用しません。</p>
+    <p>アクセス状況の把握とサービス改善のため、Google Analyticsを使用します。「Cookieに同意」を選択するまで分析Cookieは使用しません。広告目的のCookieは使用しません。</p>
   </div>
   <div class="cookie-consent-actions">
-    <button type="button" class="cookie-consent-reject" onclick="setCookieConsent(false)">必須のみ</button>
-    <button type="button" class="cookie-consent-accept" onclick="setCookieConsent(true)">分析Cookieに同意</button>
+    <button type="button" class="cookie-consent-reject" onclick="setCookieConsent(false)">同意しない</button>
+    <button type="button" class="cookie-consent-accept" onclick="setCookieConsent(true)">Cookieに同意</button>
   </div>
 </section>
 <button id="cookieConsentSettings" class="cookie-consent-settings" type="button" onclick="showCookieConsent()" hidden>Cookie設定</button>
@@ -600,17 +600,24 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
      <!-- 20261017 Cookie設定実装 -->
 
 <div class="settings-group">
-        <h3>Cookie許可設定  【新着機能】</h3>
-        <div class="settings-row">
-          <span class="settings-label">アクセス状況の把握とサービス改善のため、Google Analyticsを使用します。「Cookieに同意」を選択するまで分析Cookieは使用しません。広告目的のCookieは使用していません。</span>
-<div class="cookie-consent-actions">
+       <section id="cookieConsentBanner" class="cookie-consent-banner" aria-label="Cookieの同意設定" aria-live="polite" hidden>
+  <div class="cookie-consent-copy">
+    <strong>Cookieの同意設定</strong>
+    <p>アクセス状況の把握とサービス改善のため、Google Analyticsを使用します。「Cookieに同意」を選択するまで分析Cookieは使用しません。広告目的のCookieは使用しません。</p>
+  </div>
+  <div class="cookie-consent-actions">
     <button type="button" class="cookie-consent-reject" onclick="setCookieConsent(false)">同意しない</button>
     <button type="button" class="cookie-consent-accept" onclick="setCookieConsent(true)">Cookieに同意</button>
   </div>
 </section>
-
-section id="cookieConsentBanner" class="cookie-consent-banner" aria-label="Cookieの同意設定" aria-live="polite">
-  <div class="cookie-consent-copy">
+<button id="cookieConsentSettings" class="cookie-consent-settings" type="button" onclick="showCookieConsent()" hidden>Cookie設定</button>
+<script>
+if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getItem(analyticsConsentKey) === 'denied') {
+  document.getElementById('cookieConsentSettings').hidden = false;
+} else {
+  document.getElementById('cookieConsentBanner').hidden = false;
+}
+</script>
 
       <div class="settings-group">
         <h3>利用規約・プライバシーポリシー</h3>
