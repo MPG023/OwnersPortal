@@ -13,48 +13,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ==========================================
-// ★ Firebase Remote Config メンテナンス制御（v8バグ修正完全版）
-// ==========================================
-// 1. 【最重要】v8の仕様に合わせ、Remote Config機能をシステムへ強制ドッキング（有効化）します
-if (typeof firebase.remoteConfig === 'function') {
-  firebase.remoteConfig(); 
-}
-
-const remoteConfig = firebase.remoteConfig();
-// 最低キャッシュ時間を1分（60秒）に設定
-remoteConfig.settings.minimumFetchIntervalMillis = 60000;
-remoteConfig.defaultConfig = { is_maintenance: false };
-
-// 2. ページを開いた瞬間にFirebaseからスイッチ状態を取得
-(async function initMaintenanceCheck() {
-  try {
-    await remoteConfig.fetchAndActivate();
-    const isMaintenance = remoteConfig.getBoolean('is_maintenance');
-    
-    // 3. もし「true（メンテナンス中）」なら、画面をメンテナンス専用に書き換える
-    if (isMaintenance) {
-      document.body.innerHTML = `
-        <div style="text-align:center; padding:100px 20px; font-family:sans-serif; background-color:#fafafa; min-height:100vh; box-sizing:border-box;">
-          <div style="max-width:500px; margin:0 auto; background:#fff; padding:40px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
-            <div style="font-size:64px; margin-bottom:20px;">🔧</div>
-            <h1 style="color:#333; font-size:24px; margin-bottom:15px; font-weight:bold;">只今メンテナンス中です</h1>
-            <p style="color:#666; line-height:1.6; font-size:15px; margin-bottom:8px;">いつもオーナーズポータルをご利用いただきありがとうございます。</p>
-            <p style="color:#666; line-height:1.6; font-size:15px; margin-bottom:30px;">現在、システムの保守・点検（アップデート）を行っております。終了までしばらくお待ちください。</p>
-            <div style="border-top:1px solid #eee; padding-top:20px; color:#999; font-size:13px;">
-              © 2026 OwnersPortal
-            </div>
-          </div>
-        </div>
-      `;
-    }
-  } catch (error) {
-    console.warn("Remote Config Check Warning:", error.message);
-  }
-})();
-// ==========================================
-
-
 // ===== 認証付きデータ取得API（Google Apps Script） =====
 // お知らせ・募集状況・書類・修繕状況・年間収支・点検レポートは、すべてこの
 // 認証付きAPI経由で取得する（ログインしていない人はデータを取得できない）。
