@@ -11,6 +11,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
+
 // ==========================================
 // ★ Firebase Remote Config メンテナンス & Cookieバナー完全解決（エラー強制上書き版）
 // ==========================================
