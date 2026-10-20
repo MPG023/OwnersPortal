@@ -14,37 +14,48 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ==========================================
-// ★ Firebase Remote Config メンテナンス & Cookieバナー判定（完全同期版）
+// ★ Firebase Remote Config メンテナンス & Cookieバナー完全解決処理
 // ==========================================
-(async function initSystemSettings() {
-  // 1. Firebaseの内部でRemote Configインスタンスの準備が完了するまで最大3秒待機・リトライする安全機構
-  let remoteConfig = null;
-  for (let i = 0; i < 6; i++) {
-    if (typeof firebase.remoteConfig === 'function') {
-      remoteConfig = firebase.remoteConfig();
-      break;
+(async function forceLoadSystemSettings() {
+  const ANALYTICS_CONSENT_KEY = 'analytics_consent_status';
+
+  // 1. HTMLの読み込み順に依存せず、JavaScript側でRemote Configライブラリを強制ドッキングする
+  if (typeof firebase.remoteConfig !== 'function') {
+    try {
+      const script = document.createElement('script');
+      script.src = "https://gstatic.com";
+      script.async = false; // 確実に順番通りに読み込ませる
+      document.head.appendChild(script);
+      
+      // ライブラリがブラウザに認識されるまで最大3秒間待機・監視する
+      for (let i = 0; i < 6; i++) {
+        if (typeof firebase.remoteConfig === 'function') break;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    } catch (e) {
+      console.error("[System] ライブラリの強制挿入に失敗しました:", e.message);
     }
-    await new Promise(resolve => setTimeout(resolve, 500)); // 0.5秒待機して再トライ
   }
 
-  // 万が一、通信遮断等でライブラリが完全に読み込めなかった場合の保険
-  if (!remoteConfig) {
-    console.warn("[System] Remote Configの初期化をスキップし、通常起動します。");
-    checkCookieConsentBanner();
+  // 2. それでも万が一認識できなかった場合の、ログイン最優先のための安全ガード
+  if (typeof firebase.remoteConfig !== 'function') {
+    console.warn("[System] リモート設定が利用できないため、通常モードで起動します。");
+    executeCookieBannerMemory();
     return;
   }
 
   try {
-    // 2. 最低キャッシュ時間を1分（60秒）に設定
-    remoteConfig.settings.minimumFetchIntervalMillis = 60000;
+    // 3. Remote Configの初期化とキャッシュ・デフォルト設定
+    const remoteConfig = firebase.remoteConfig();
+    remoteConfig.settings.minimumFetchIntervalMillis = 60000; // 1分間キャッシュ
     remoteConfig.defaultConfig = { is_maintenance: false };
 
-    // 3. Firebaseサーバーから最新のスイッチ状態を同期取得
+    // 4. Firebaseサーバーから最新のスイッチ状態を取得
     await remoteConfig.fetchAndActivate();
     const isMaintenance = remoteConfig.getBoolean('is_maintenance');
     
     if (isMaintenance) {
-      // 4. メンテナンスが「true（有効）」なら、画面をメンテナンス案内専用にロック
+      // 5. メンテナンス中（true）であれば、ログインを完全にブロックして専用画面を出す
       document.body.innerHTML = `
         <div style="text-align:center; padding:100px 20px; font-family:sans-serif; background-color:#fafafa; min-height:100vh; box-sizing:border-box;">
           <div style="max-width:500px; margin:0 auto; background:#fff; padding:40px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
@@ -58,41 +69,38 @@ const db = firebase.firestore();
           </div>
         </div>
       `;
-      console.log("[System] メンテナンスモードが有効なため、通常処理をブロックしました。");
       return; 
     }
   } catch (error) {
-    console.warn("Remote Config Connection Warning:", error.message);
+    console.warn("[System] Firebaseサーバーとの通信スキップ:", error.message);
   }
 
-  // 5. 【通常時】Cookieバナーの過去の記憶（選択状態）の整合性チェックへ進む
-  checkCookieConsentBanner();
-})();
+  // 6. 【通常稼働時】Cookie同意バナーの過去の記憶を読み込んで表示を制御する
+  executeCookieBannerMemory();
 
-// 通常稼働時にCookie同意バナーのローカルストレージ状態を読み込んで最適化する関数
-function checkCookieConsentBanner() {
-  const ANALYTICS_CONSENT_KEY = 'analytics_consent_status';
-  const savedStatus = localStorage.getItem(ANALYTICS_CONSENT_KEY);
+  function executeCookieBannerMemory() {
+    const savedStatus = localStorage.getItem(ANALYTICS_CONSENT_KEY);
+    const banner = document.getElementById('cookieConsentBanner');
+    const settingsBtn = document.getElementById('cookieConsentSettings');
 
-  const banner = document.getElementById('cookieConsentBanner');
-  const settingsBtn = document.getElementById('cookieConsentSettings');
-
-  if (savedStatus === 'granted' || savedStatus === 'denied') {
-    // 過去に選択済みの場合は、バナーを完全に非表示にして、右下の設定ボタンのみにする
-    if (banner) banner.hidden = true;
-    if (settingsBtn) settingsBtn.hidden = false;
-    
-    // 同意済みのステータスならGoogleアナリティクスをアクティブにする
-    if (savedStatus === 'granted' && typeof gtag === 'function') {
-      gtag('consent', 'update', { 'analytics_storage': 'granted' });
+    if (savedStatus === 'granted' || savedStatus === 'denied') {
+      // 過去に選択している場合はバナーを消して設定ボタンを出す
+      if (banner) banner.hidden = true;
+      if (settingsBtn) settingsBtn.hidden = false;
+      
+      // 同意済みの場合はGoogleアナリティクスを正常稼働
+      if (savedStatus === 'granted' && typeof gtag === 'function') {
+        gtag('consent', 'update', { 'analytics_storage': 'granted' });
+      }
+    } else {
+      // 未選択の新規アクセスならバナーを出す
+      if (banner) banner.hidden = false;
+      if (settingsBtn) settingsBtn.hidden = true;
     }
-  } else {
-    // まだ一度も選んでいない新規ユーザーには同意バナーを表示
-    if (banner) banner.hidden = false;
-    if (settingsBtn) settingsBtn.hidden = true;
   }
-}
+})();
 // ==========================================
+
 
 
 
