@@ -10,24 +10,20 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
-const auth = firebase.auth();
-const db = firebase.firestore();
-
 // ==========================================
 // ★ Firebase Remote Config メンテナンス & Cookieバナー完全解決処理
 // ==========================================
 (async function forceLoadSystemSettings() {
   const ANALYTICS_CONSENT_KEY = 'analytics_consent_status';
 
-  // 1. HTMLの読み込み順に依存せず、JavaScript側でRemote Configライブラリを強制ドッキングする
+  // 1. JavaScript側でRemote Configライブラリのドッキング状態をチェック
   if (typeof firebase.remoteConfig !== 'function') {
     try {
       const script = document.createElement('script');
       script.src = "https://gstatic.com";
-      script.async = false; // 確実に順番通りに読み込ませる
+      script.async = false;
       document.head.appendChild(script);
       
-      // ライブラリがブラウザに認識されるまで最大3秒間待機・監視する
       for (let i = 0; i < 6; i++) {
         if (typeof firebase.remoteConfig === 'function') break;
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -37,7 +33,7 @@ const db = firebase.firestore();
     }
   }
 
-  // 2. それでも万が一認識できなかった場合の、ログイン最優先のための安全ガード
+  // 2. 万が一認識できなかった場合の安全エスケープガード
   if (typeof firebase.remoteConfig !== 'function') {
     console.warn("[System] リモート設定が利用できないため、通常モードで起動します。");
     executeCookieBannerMemory();
@@ -45,12 +41,12 @@ const db = firebase.firestore();
   }
 
   try {
-    // 3. Remote Configの初期化とキャッシュ・デフォルト設定
+    // 3. すでに初期化済みのFirebase本体から親Remote Configを生成
     const remoteConfig = firebase.remoteConfig();
     remoteConfig.settings.minimumFetchIntervalMillis = 60000; // 1分間キャッシュ
     remoteConfig.defaultConfig = { is_maintenance: false };
 
-    // 4. Firebaseサーバーから最新のスイッチ状態を取得
+    // 4. 最新のスイッチ状態を取得して判定
     await remoteConfig.fetchAndActivate();
     const isMaintenance = remoteConfig.getBoolean('is_maintenance');
     
@@ -84,16 +80,12 @@ const db = firebase.firestore();
     const settingsBtn = document.getElementById('cookieConsentSettings');
 
     if (savedStatus === 'granted' || savedStatus === 'denied') {
-      // 過去に選択している場合はバナーを消して設定ボタンを出す
       if (banner) banner.hidden = true;
       if (settingsBtn) settingsBtn.hidden = false;
-      
-      // 同意済みの場合はGoogleアナリティクスを正常稼働
       if (savedStatus === 'granted' && typeof gtag === 'function') {
         gtag('consent', 'update', { 'analytics_storage': 'granted' });
       }
     } else {
-      // 未選択の新規アクセスならバナーを出す
       if (banner) banner.hidden = false;
       if (settingsBtn) settingsBtn.hidden = true;
     }
@@ -102,7 +94,8 @@ const db = firebase.firestore();
 // ==========================================
 
 
-
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 // ===== 認証付きデータ取得API（Google Apps Script） =====
 // お知らせ・募集状況・書類・修繕状況・年間収支・点検レポートは、すべてこの
