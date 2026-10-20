@@ -3371,12 +3371,28 @@ window.showCookieConsent = function() {
 };
 
 // ==========================================
-// ★ Firebase Remote Config メンテナンス制御（最末尾・安全隔離版）
+// ★ Firebase Remote Config メンテナンス制御（ライブラリ自動ドッキング版）
 // ==========================================
-// 既存のログイン処理に一切干渉しないよう、独立した塊として最後に実行させます
+// HTML側の並び順に一切依存せず、JavaScript側で安全にライブラリを強制ドッキングします
 window.addEventListener('load', async function() {
+  // 1. もしhtml側で読み込めていなければ、JavaScript側で強制的にライブラリを頭に挿入する
   if (typeof firebase.remoteConfig !== 'function') {
-    console.warn("[System] Remote Configライブラリがhtml側で未検出のため、通常起動します。");
+    try {
+      const script = document.createElement('script');
+      script.src = "https://gstatic.com";
+      script.async = false; // 順番を厳守して読み込む
+      document.head.appendChild(script);
+      
+      // ライブラリがブラウザに認識されるまで最大3秒間待機・監視する
+      for (let i = 0; i < 6; i++) {
+        if (typeof firebase.remoteConfig === 'function') break;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    } catch (e) {}
+  }
+
+  // 2. それでも認識できなかった場合の通常ログイン最優先のための安全ガード
+  if (typeof firebase.remoteConfig !== 'function') {
     return;
   }
 
@@ -3389,6 +3405,7 @@ window.addEventListener('load', async function() {
     const isMaintenance = remoteConfig.getBoolean('is_maintenance');
     
     if (isMaintenance) {
+      // 3. メンテナンスが「true」なら、画面を専用案内に切り替える
       document.body.innerHTML = `
         <div style="text-align:center; padding:100px 20px; font-family:sans-serif; background-color:#fafafa; min-height:100vh; box-sizing:border-box;">
           <div style="max-width:500px; margin:0 auto; background:#fff; padding:40px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
@@ -3404,7 +3421,7 @@ window.addEventListener('load', async function() {
       `;
     }
   } catch (error) {
-    console.warn("Remote Config Error:", error.message);
+    console.warn("Remote Config Connection Warning:", error.message);
   }
 });
 // ==========================================
