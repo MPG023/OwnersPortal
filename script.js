@@ -3370,20 +3370,45 @@ window.showCookieConsent = function() {
   if (settingsBtn) settingsBtn.hidden = true;
 };
 
-// ==========================================
-// ★ Firebase Remote Config メンテナンス制御（ライブラリ自動ドッキング版）
-// ==========================================
-// HTML側の並び順に一切依存せず、JavaScript側で安全にライブラリを強制ドッキングします
-window.addEventListener('load', async function() {
-  // 1. もしhtml側で読み込めていなければ、JavaScript側で強制的にライブラリを頭に挿入する
+// =================================================================
+// 1. Firebase 接続構成（アプリID・測定IDを1つに統合）
+// =================================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyCqfKoF0x5dkdsj83_lczbsm8tLQN3hzyQ",
+  authDomain: "://firebaseapp.com",
+  projectId: "owners-login",
+  storageBucket: "owners-login.firebasestorage.app",
+  messagingSenderId: "860477366916",
+  measurementId: "G-MP2N6KGMPT",
+  appId: "1:860477366916:web:5a92f334a5b3a22c2e98d1"
+};
+
+// Firebaseの初期化
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// 外部APIのURL
+const SECURE_API_URL = "https://google.com";
+const ANALYTICS_CONSENT_KEY = 'analytics_consent_status';
+
+// =================================================================
+// 2. 【最優先】Firebase Remote Config メンテナンス & Cookieバナー完全解決
+// =================================================================
+(async function forceLoadSystemSettings() {
+  // 過去にテスト追加した古い関数（残骸）が裏で動いていたらここで強制消去します
+  if (typeof window.checkMaintenanceStatus === 'function') {
+    window.checkMaintenanceStatus = function() { /* 強制無効化 */ };
+  }
+
+  // HTMLの並び順に関係なく、JavaScript側で安全にライブラリを強制ドッキング
   if (typeof firebase.remoteConfig !== 'function') {
     try {
       const script = document.createElement('script');
       script.src = "https://gstatic.com";
-      script.async = false; // 順番を厳守して読み込む
+      script.async = false;
       document.head.appendChild(script);
       
-      // ライブラリがブラウザに認識されるまで最大3秒間待機・監視する
       for (let i = 0; i < 6; i++) {
         if (typeof firebase.remoteConfig === 'function') break;
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -3391,8 +3416,9 @@ window.addEventListener('load', async function() {
     } catch (e) {}
   }
 
-  // 2. それでも認識できなかった場合の通常ログイン最優先のための安全ガード
+  // それでも認識できなかった場合の安全起動ガード
   if (typeof firebase.remoteConfig !== 'function') {
+    executeCookieBannerMemory();
     return;
   }
 
@@ -3405,7 +3431,7 @@ window.addEventListener('load', async function() {
     const isMaintenance = remoteConfig.getBoolean('is_maintenance');
     
     if (isMaintenance) {
-      // 3. メンテナンスが「true」なら、画面を専用案内に切り替える
+      // メンテナンス有効時は通常のログイン画面を完全に消去して専用画面へ固定
       document.body.innerHTML = `
         <div style="text-align:center; padding:100px 20px; font-family:sans-serif; background-color:#fafafa; min-height:100vh; box-sizing:border-box;">
           <div style="max-width:500px; margin:0 auto; background:#fff; padding:40px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
@@ -3419,9 +3445,107 @@ window.addEventListener('load', async function() {
           </div>
         </div>
       `;
+      return; 
     }
-  } catch (error) {
-    console.warn("Remote Config Connection Warning:", error.message);
+  } catch (error) {}
+
+  // 通常運用時はCookieバナーの判定を行う
+  executeCookieBannerMemory();
+})();
+
+function executeCookieBannerMemory() {
+  const savedStatus = localStorage.getItem(ANALYTICS_CONSENT_KEY);
+  const banner = document.getElementById('cookieConsentBanner');
+  const settingsBtn = document.getElementById('cookieConsentSettings');
+
+  if (savedStatus === 'granted' || savedStatus === 'denied') {
+    if (banner) banner.hidden = true;
+    if (settingsBtn) settingsBtn.hidden = false;
+    if (savedStatus === 'granted' && typeof gtag === 'function') {
+      gtag('consent', 'update', { 'analytics_storage': 'granted' });
+    }
+  } else {
+    if (banner) banner.hidden = false;
+    if (settingsBtn) settingsBtn.hidden = true;
+  }
+}
+
+// =================================================================
+// 3. ログイン機能 & パスワードがURLに漏れる現象の絶対防御
+// =================================================================
+function showLoading() {
+  document.getElementById("loadingOverlay").style.display = "flex";
+}
+function hideLoading() {
+  document.getElementById("loadingOverlay").style.display = "none";
+}
+
+// ページ読み込み完了時にログインフォームの「送信の暴走」を完全にロックする
+document.addEventListener("DOMContentLoaded", () => {
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) {
+    loginForm.addEventListener("submit", function (event) {
+      // 【絶対防御】ブラウザがURLにパスワードを書き込む通常の送信動作をここで100%強制ストップします
+      event.preventDefault();
+      executeSecureLogin();
+    });
   }
 });
-// ==========================================
+
+// キーボードのEnterキーでのログインを処理する
+document.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    const loginPage = document.getElementById("loginPage");
+    if (loginPage && loginPage.style.display !== "none") {
+      executeSecureLogin();
+    }
+  }
+});
+
+// 安全なログイン実行関数（データはすべて暗号化して裏側でFirebaseに送信されます）
+function executeSecureLogin() {
+  showLoading();
+  
+  const idInput = document.getElementById("loginId").value;
+  const passInput = document.getElementById("password").value;
+
+  auth.signInWithEmailAndPassword(idInput + "@owners-portal.com", passInput)
+    .then((userCredential) => {
+      console.log("ログイン成功");
+      if (typeof preloadAllData === 'function') {
+        preloadAllData();
+      } else {
+        hideLoading();
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("mainPage").style.display = "block";
+      }
+    })
+    .catch((error) => {
+      hideLoading();
+      alert("ログインIDまたはパスワードが間違っています。");
+    });
+}
+
+// =================================================================
+// 4. Cookie同意バナーのボタンクリック連動関数
+// =================================================================
+window.setCookieConsent = function(isAccepted) {
+  const status = isAccepted ? 'granted' : 'denied';
+  localStorage.setItem(ANALYTICS_CONSENT_KEY, status);
+  
+  if (typeof gtag === 'function') {
+    gtag('consent', 'update', { 'analytics_storage': status });
+  }
+
+  const banner = document.getElementById('cookieConsentBanner');
+  const settingsBtn = document.getElementById('cookieConsentSettings');
+  if (banner) banner.hidden = true;
+  if (settingsBtn) settingsBtn.hidden = false;
+};
+
+window.showCookieConsent = function() {
+  const banner = document.getElementById('cookieConsentBanner');
+  const settingsBtn = document.getElementById('cookieConsentSettings');
+  if (banner) banner.hidden = false;
+  if (settingsBtn) settingsBtn.hidden = true;
+};
