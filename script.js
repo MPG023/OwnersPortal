@@ -3411,3 +3411,42 @@ window.showCookieConsent = function() {
   if (banner) banner.hidden = false;
   if (settingsBtn) settingsBtn.hidden = true;
 };
+
+// ==========================================
+// ★ Firebase Remote Config メンテナンス制御（最末尾・安全隔離版）
+// ==========================================
+// 既存のログイン処理に一切干渉しないよう、独立した塊として最後に実行させます
+window.addEventListener('load', async function() {
+  if (typeof firebase.remoteConfig !== 'function') {
+    console.warn("[System] Remote Configライブラリがhtml側で未検出のため、通常起動します。");
+    return;
+  }
+
+  try {
+    const remoteConfig = firebase.remoteConfig();
+    remoteConfig.settings.minimumFetchIntervalMillis = 60000; // 1分間キャッシュ
+    remoteConfig.defaultConfig = { is_maintenance: false };
+
+    await remoteConfig.fetchAndActivate();
+    const isMaintenance = remoteConfig.getBoolean('is_maintenance');
+    
+    if (isMaintenance) {
+      document.body.innerHTML = `
+        <div style="text-align:center; padding:100px 20px; font-family:sans-serif; background-color:#fafafa; min-height:100vh; box-sizing:border-box;">
+          <div style="max-width:500px; margin:0 auto; background:#fff; padding:40px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+            <div style="font-size:64px; margin-bottom:20px;">🔧</div>
+            <h1 style="color:#333; font-size:24px; margin-bottom:15px; font-weight:bold;">只今メンテナンス中です</h1>
+            <p style="color:#666; line-height:1.6; font-size:15px; margin-bottom:8px;">いつもオーナーズポータルをご利用いただきありがとうございます。</p>
+            <p style="color:#666; line-height:1.6; font-size:15px; margin-bottom:30px;">現在、システムの保守・点検（アップデート）を行っております。終了までしばらくお待ちください。</p>
+            <div style="border-top:1px solid #eee; padding-top:20px; color:#999; font-size:13px;">
+              © 2026 OwnersPortal
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  } catch (error) {
+    console.warn("Remote Config Error:", error.message);
+  }
+});
+// ==========================================
