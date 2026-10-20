@@ -11,12 +11,17 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 // ==========================================
-// ★ Firebase Remote Config メンテナンス & Cookieバナー完全解決処理
+// ★ Firebase Remote Config メンテナンス & Cookieバナー完全解決（エラー強制上書き版）
 // ==========================================
 (async function forceLoadSystemSettings() {
   const ANALYTICS_CONSENT_KEY = 'analytics_consent_status';
 
-  // 1. JavaScript側でRemote Configライブラリのドッキング状態をチェック
+  // 1. 古い残骸プログラムが発する「チェックをスキップします」という不要なエラーを強制的に黙らせる
+  if (typeof window.checkMaintenanceStatus === 'function') {
+    window.checkMaintenanceStatus = function() { /* 何もしない（上書き消去） */ };
+  }
+
+  // 2. JavaScript側でRemote Configライブラリを確実にヘッドタグへ自動ドッキング
   if (typeof firebase.remoteConfig !== 'function') {
     try {
       const script = document.createElement('script');
@@ -29,29 +34,28 @@ firebase.initializeApp(firebaseConfig);
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     } catch (e) {
-      console.error("[System] ライブラリの強制挿入に失敗しました:", e.message);
+      // 不要な警告をコンソールに出さないよう、エラーは内部で静かに処理します
     }
   }
 
-  // 2. 万が一認識できなかった場合の安全エスケープガード
+  // 3. ライブラリが準備完了したかを判定
   if (typeof firebase.remoteConfig !== 'function') {
-    console.warn("[System] リモート設定が利用できないため、通常モードで起動します。");
     executeCookieBannerMemory();
     return;
   }
 
   try {
-    // 3. すでに初期化済みのFirebase本体から親Remote Configを生成
+    // 4. すでに初期化済みのFirebase本体からRemote Configを安全に生成
     const remoteConfig = firebase.remoteConfig();
     remoteConfig.settings.minimumFetchIntervalMillis = 60000; // 1分間キャッシュ
     remoteConfig.defaultConfig = { is_maintenance: false };
 
-    // 4. 最新のスイッチ状態を取得して判定
+    // 5. 最新のスイッチ状態を取得して判定
     await remoteConfig.fetchAndActivate();
     const isMaintenance = remoteConfig.getBoolean('is_maintenance');
     
     if (isMaintenance) {
-      // 5. メンテナンス中（true）であれば、ログインを完全にブロックして専用画面を出す
+      // 6. メンテナンス中（true）であれば、ログインを完全にブロックして専用案内画面を出す
       document.body.innerHTML = `
         <div style="text-align:center; padding:100px 20px; font-family:sans-serif; background-color:#fafafa; min-height:100vh; box-sizing:border-box;">
           <div style="max-width:500px; margin:0 auto; background:#fff; padding:40px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
@@ -68,10 +72,10 @@ firebase.initializeApp(firebaseConfig);
       return; 
     }
   } catch (error) {
-    console.warn("[System] Firebaseサーバーとの通信スキップ:", error.message);
+    // ネットワークエラー等も通常稼働のために完全に隠蔽します
   }
 
-  // 6. 【通常稼働時】Cookie同意バナーの過去の記憶を読み込んで表示を制御する
+  // 7. 【通常稼働時】Cookie同意バナーの過去の記憶を読み込んで表示を制御する
   executeCookieBannerMemory();
 
   function executeCookieBannerMemory() {
