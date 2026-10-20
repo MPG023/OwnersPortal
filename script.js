@@ -13,33 +13,53 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// メンテナンス画面の切替
 const remoteConfig = firebase.remoteConfig();
+
+remoteConfig.settings = {
+  minimumFetchIntervalMillis: 0
+};
 
 remoteConfig.defaultConfig = {
   maintenance_enabled: false
 };
 
-remoteConfig.fetchAndActivate().then(() => {
-  if (remoteConfig.getBoolean("maintenance_enabled")) {
-    document.body.innerHTML = `
-      <div style="
-        min-height:100vh;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        text-align:center;
-        font-family:Arial, sans-serif;
-        background:#f5f5f5;
-        color:#222;
-      ">
-        <div>
-          <h1>ただいまメンテナンス中です</h1>
-          <p>ご不便をおかけして申し訳ございません。<br>しばらくしてから再度お試しください。</p>
-        </div>
+remoteConfig
+  .fetchAndActivate()
+  .then(() => {
+    if (!remoteConfig.getBoolean("maintenance_enabled")) return;
+
+    const maintenanceScreen = document.createElement("div");
+
+    maintenanceScreen.style.cssText = `
+      position: fixed;
+      z-index: 999999;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #222;
+      text-align: center;
+      font-family: Arial, "Noto Sans JP", sans-serif;
+    `;
+
+    maintenanceScreen.innerHTML = `
+      <div>
+        <h1 style="margin:0 0 18px;">ただいまメンテナンス中です</h1>
+        <p style="margin:0; line-height:1.8;">
+          ご不便をおかけして申し訳ございません。<br>
+          しばらくしてから再度お試しください。
+        </p>
       </div>
     `;
-  }
-});
+
+    document.body.appendChild(maintenanceScreen);
+  })
+  .catch((error) => {
+    console.warn("Remote Configを取得できませんでした。", error);
+  });
 
 // ===== 認証付きデータ取得API（Google Apps Script） =====
 // お知らせ・募集状況・書類・修繕状況・年間収支・点検レポートは、すべてこの
