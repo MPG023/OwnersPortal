@@ -101,7 +101,7 @@ async function checkMaintenanceMode() {
           font-size: 13px;
           font-weight: bold;
           letter-spacing: 0.1em;
-        ">OWNERS PORTAL</p>
+        ">オーナーズポータル</p>
 
         <h1 style="
           margin: 0 0 22px;
