@@ -14,33 +14,38 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ==========================================
-// ★ Firebase Remote Config によるメンテナンス画面制御
+// ★ Firebase Remote Config によるメンテナンス画面制御（安全対策版）
 // ==========================================
-const remoteConfig = firebase.remoteConfig();
-
-// 動作安定のため、最低キャッシュ時間を1分（60秒）に設定
-// （Firebase側でのON/OFF切り替えが、最長1分以内にサイトへ反映されます）
-remoteConfig.settings.minimumFetchIntervalMillis = 60000;
-
-// 通信失敗時などの保険として、標準の状態（非メンテナンス）を定義
-remoteConfig.defaultConfig = {
-  is_maintenance: false
-};
-
-// ページが開かれた瞬間にメンテナンス状態をチェック
 (async function checkMaintenanceStatus() {
+  // 1. ライブラリが正しく読み込まれているかチェック（エラー巻き添え防止）
+  if (typeof firebase.remoteConfig !== 'function') {
+    console.warn("[Remote Config] ライブラリが読み込まれていないため、チェックをスキップします。");
+    return;
+  }
+
   try {
-    // 1. Firebaseサーバーから最新のスイッチ状態を取得
+    const remoteConfig = firebase.remoteConfig();
+
+    // 動作安定のため、最低キャッシュ時間を1分（60秒）に設定
+    remoteConfig.settings.minimumFetchIntervalMillis = 60000;
+
+    // 保険としての標準状態（非メンテナンス）
+    remoteConfig.defaultConfig = {
+      is_maintenance: false
+    };
+
+    // 2. Firebaseサーバーから最新のスイッチ状態を取得
     await remoteConfig.fetchAndActivate();
     
-    // 2. 「is_maintenance」の値（true または false）を読み出す
+    // 3. 「is_maintenance」の値（true または false）を読み出す
     const isMaintenance = remoteConfig.getBoolean('is_maintenance');
     
     if (isMaintenance) {
-      // 3. もし「true（オン）」なら、画面をすべて書き換えてメンテナンス画面を強制表示
+      // 4. もし「true」なら、画面をメンテナンス専用に書き換える
       document.body.innerHTML = `
         <div style="text-align:center; padding:100px 20px; font-family:sans-serif; background-color:#fafafa; min-height:100vh; box-sizing:border-box;">
           <div style="max-width:500px; margin:0 auto; background:#fff; padding:40px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+            <div style="font-size:64px; margin-bottom:20px;">🔧</div>
             <h1 style="color:#333; font-size:24px; margin-bottom:15px; font-weight:bold;">只今メンテナンス中です</h1>
             <p style="color:#666; line-height:1.6; font-size:15px; margin-bottom:8px;">いつもオーナーズポータルをご利用いただきありがとうございます。</p>
             <p style="color:#666; line-height:1.6; font-size:15px; margin-bottom:30px;">現在、システムの保守・点検（アップデート）を行っております。終了までしばらくお待ちください。</p>
@@ -50,16 +55,14 @@ remoteConfig.defaultConfig = {
           </div>
         </div>
       `;
-      
-      // 他のログイン処理やデータの読み込み通信を完全にストップさせる
-      window.stop(); 
-      throw new Error("Application paused due to maintenance mode.");
+      console.log("[Remote Config] メンテナンス画面を表示しました。");
     }
   } catch (error) {
     console.warn("Remote Config Check:", error.message);
   }
 })();
 // ==========================================
+
 
 
 // ===== 認証付きデータ取得API（Google Apps Script） =====
