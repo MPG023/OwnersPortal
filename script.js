@@ -13,10 +13,11 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ===== メンテナンス画面（Firebase Remote Config） =====
+// ===== メンテナンス画面：Firebase Remote Config =====
 const remoteConfig = firebase.remoteConfig();
 
 remoteConfig.settings = {
+  fetchTimeoutMillis: 10000,
   minimumFetchIntervalMillis: 0
 };
 
@@ -24,12 +25,19 @@ remoteConfig.defaultConfig = {
   is_maintenance: false
 };
 
-remoteConfig
-  .fetchAndActivate()
-  .then(() => {
-    if (!remoteConfig.getBoolean("is_maintenance")) return;
+async function checkMaintenanceMode() {
+  try {
+    await remoteConfig.fetchAndActivate();
 
-    // 後ろの画面をすべて隠す
+    const isMaintenance = remoteConfig.getBoolean("is_maintenance");
+
+    // false のときは通常どおりサイトを表示する
+    if (!isMaintenance) return;
+
+    // すでに画面を追加している場合は二重に作らない
+    if (document.getElementById("maintenanceScreen")) return;
+
+    // 既存画面を隠す
     [
       "loginPage",
       "portal",
@@ -38,12 +46,16 @@ remoteConfig
       "cookieConsentSettings"
     ].forEach((id) => {
       const element = document.getElementById(id);
-      if (element) element.style.display = "none";
+      if (element) {
+        element.style.display = "none";
+      }
     });
 
     document.body.style.overflow = "hidden";
 
+    // メンテナンス画面を追加
     const maintenanceScreen = document.createElement("div");
+    maintenanceScreen.id = "maintenanceScreen";
 
     maintenanceScreen.style.cssText = `
       position: fixed;
@@ -54,34 +66,32 @@ remoteConfig
       justify-content: center;
       padding: 24px;
       box-sizing: border-box;
-      background:
-        radial-gradient(circle at top right, #f9d9df 0, transparent 32%),
-        linear-gradient(135deg, #fff8f9 0%, #f4f4f4 100%);
+      background: #f7f7f7;
       font-family: Arial, "Noto Sans JP", sans-serif;
       text-align: center;
     `;
 
     maintenanceScreen.innerHTML = `
-      <div style="
-        width: min(100%, 560px);
-        padding: 48px 32px;
+      <main style="
+        width: min(100%, 580px);
+        padding: 52px 36px;
         box-sizing: border-box;
-        border: 1px solid #f0c7d0;
-        border-radius: 20px;
+        border-top: 5px solid #d4002a;
+        border-radius: 12px;
         background: #ffffff;
-        box-shadow: 0 16px 42px rgba(80, 25, 35, 0.16);
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.14);
       ">
         <div style="
-          width: 76px;
-          height: 76px;
+          width: 72px;
+          height: 72px;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin: 0 auto 24px;
+          margin: 0 auto 22px;
           border-radius: 50%;
           background: #d4002a;
-          color: #fff;
-          font-size: 34px;
+          color: #ffffff;
+          font-size: 36px;
           font-weight: bold;
         ">!</div>
 
@@ -90,34 +100,36 @@ remoteConfig
           color: #d4002a;
           font-size: 13px;
           font-weight: bold;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.1em;
         ">OWNERS PORTAL</p>
 
         <h1 style="
-          margin: 0 0 20px;
-          color: #222;
-          font-size: 27px;
+          margin: 0 0 22px;
+          color: #222222;
+          font-size: 28px;
           line-height: 1.5;
         ">ただいまメンテナンス中です</h1>
 
         <p style="
           margin: 0;
-          color: #555;
+          color: #555555;
           font-size: 16px;
           line-height: 2;
         ">
           ご不便をおかけして申し訳ございません。<br>
           システムメンテナンスのため、現在ご利用いただけません。<br>
-          しばらくしてから、再度お試しください。
+          しばらくしてから再度お試しください。
         </p>
-      </div>
+      </main>
     `;
 
     document.body.appendChild(maintenanceScreen);
-  })
-  .catch((error) => {
-    console.warn("Remote Configを取得できませんでした。", error);
-  });
+  } catch (error) {
+    console.warn("メンテナンス設定を取得できませんでした。", error);
+  }
+}
+
+checkMaintenanceMode();
 
 // ===== 認証付きデータ取得API（Google Apps Script） =====
 // お知らせ・募集状況・書類・修繕状況・年間収支・点検レポートは、すべてこの
