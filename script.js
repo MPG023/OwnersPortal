@@ -3392,160 +3392,54 @@ const db = firebase.firestore();
 const SECURE_API_URL = "https://google.com";
 const ANALYTICS_CONSENT_KEY = 'analytics_consent_status';
 
-// =================================================================
-// 2. 【最優先】Firebase Remote Config メンテナンス & Cookieバナー完全解決
-// =================================================================
-(async function forceLoadSystemSettings() {
-  // 過去にテスト追加した古い関数（残骸）が裏で動いていたらここで強制消去します
-  if (typeof window.checkMaintenanceStatus === 'function') {
-    window.checkMaintenanceStatus = function() { /* 強制無効化 */ };
-  }
-
-  // HTMLの並び順に関係なく、JavaScript側で安全にライブラリを強制ドッキング
-  if (typeof firebase.remoteConfig !== 'function') {
-    try {
-      const script = document.createElement('script');
-      script.src = "https://gstatic.com";
-      script.async = false;
-      document.head.appendChild(script);
+  <!-- ========================================== -->
+  <!-- 🔧 Firebase自動連動・メンテナンス画面制御 -->
+  <!-- ========================================== -->
+  <!-- Firebase本体とRemote Configの部品を一番最初に安全に読み込みます -->
+  <script src="https://gstatic.com"></script>
+  <script src="https://gstatic.com"></script>
+  <script>
+    (async function() {
+      // 既存のログインConfigとは完全に独立した、チェック専用の接続設定です
+      var checkConfig = {
+        apiKey: "AIzaSyCqfKoF0x5dkdsj83_lczbsm8tLQN3hzyQ",
+        authDomain: "://firebaseapp.com",
+        projectId: "owners-login",
+        storageBucket: "owners-login.firebasestorage.app",
+        messagingSenderId: "860477366916",
+        measurementId: "G-MP2N6KGMPT",
+        appId: "1:860477366916:web:5a92f334a5b3a22c2e98d1"
+      };
       
-      for (let i = 0; i < 6; i++) {
-        if (typeof firebase.remoteConfig === 'function') break;
-        await new Promise(resolve => setTimeout(resolve, 500));
+      // Firebaseが初期化されていない場合のみ初期化を実行
+      if (firebase.apps.length === 0) {
+        firebase.initializeApp(checkConfig);
       }
-    } catch (e) {}
-  }
 
-  // それでも認識できなかった場合の安全起動ガード
-  if (typeof firebase.remoteConfig !== 'function') {
-    executeCookieBannerMemory();
-    return;
-  }
+      try {
+        var remoteConfig = firebase.remoteConfig();
+        remoteConfig.settings.minimumFetchIntervalMillis = 1000; // テスト用に反映を最速（1秒）に設定
+        remoteConfig.defaultConfig = { is_maintenance: false };
 
-  try {
-    const remoteConfig = firebase.remoteConfig();
-    remoteConfig.settings.minimumFetchIntervalMillis = 60000; // 1分間キャッシュ
-    remoteConfig.defaultConfig = { is_maintenance: false };
-
-    await remoteConfig.fetchAndActivate();
-    const isMaintenance = remoteConfig.getBoolean('is_maintenance');
-    
-    if (isMaintenance) {
-      // メンテナンス有効時は通常のログイン画面を完全に消去して専用画面へ固定
-      document.body.innerHTML = `
-        <div style="text-align:center; padding:100px 20px; font-family:sans-serif; background-color:#fafafa; min-height:100vh; box-sizing:border-box;">
-          <div style="max-width:500px; margin:0 auto; background:#fff; padding:40px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
-            <div style="font-size:64px; margin-bottom:20px;">🔧</div>
-            <h1 style="color:#333; font-size:24px; margin-bottom:15px; font-weight:bold;">只今メンテナンス中です</h1>
-            <p style="color:#666; line-height:1.6; font-size:15px; margin-bottom:8px;">いつもオーナーズポータルをご利用いただきありがとうございます。</p>
-            <p style="color:#666; line-height:1.6; font-size:15px; margin-bottom:30px;">現在、システムの保守・点検（アップデート）を行っております。終了までしばらくお待ちください。</p>
-            <div style="border-top:1px solid #eee; padding-top:20px; color:#999; font-size:13px;">
-              © 2026 OwnersPortal
+        await remoteConfig.fetchAndActivate();
+        if (remoteConfig.getBoolean('is_maintenance')) {
+          // メンテナンスが「true」なら、後続の読み込みをすべてブロッキングして案内を表示
+          document.write(`
+            <div style="text-align:center; padding:100px 20px; font-family:sans-serif; background-color:#fafafa; min-height:100vh; box-sizing:border-box; width:100%; position:fixed; top:0; left:0; z-index:999999;">
+              <div style="max-width:500px; margin:0 auto; background:#fff; padding:40px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+                <div style="font-size:64px; margin-bottom:20px;">🔧</div>
+                <h1 style="color:#333; font-size:24px; margin-bottom:15px; font-weight:bold;">只今メンテナンス中です</h1>
+                <p style="color:#666; line-height:1.6; font-size:15px; margin-bottom:8px;">いつもオーナーズポータルをご利用いただきありがとうございます。</p>
+                <p style="color:#666; line-height:1.6; font-size:15px; margin-bottom:30px;">現在、システムの保守・点検（アップデート）を行っております。終了までしばらくお待ちください。</p>
+                <div style="border-top:1px solid #eee; padding-top:20px; color:#999; font-size:13px;">© 2026 OwnersPortal</div>
+              </div>
             </div>
-          </div>
-        </div>
-      `;
-      return; 
-    }
-  } catch (error) {}
-
-  // 通常運用時はCookieバナーの判定を行う
-  executeCookieBannerMemory();
-})();
-
-function executeCookieBannerMemory() {
-  const savedStatus = localStorage.getItem(ANALYTICS_CONSENT_KEY);
-  const banner = document.getElementById('cookieConsentBanner');
-  const settingsBtn = document.getElementById('cookieConsentSettings');
-
-  if (savedStatus === 'granted' || savedStatus === 'denied') {
-    if (banner) banner.hidden = true;
-    if (settingsBtn) settingsBtn.hidden = false;
-    if (savedStatus === 'granted' && typeof gtag === 'function') {
-      gtag('consent', 'update', { 'analytics_storage': 'granted' });
-    }
-  } else {
-    if (banner) banner.hidden = false;
-    if (settingsBtn) settingsBtn.hidden = true;
-  }
-}
-
-// =================================================================
-// 3. ログイン機能 & パスワードがURLに漏れる現象の絶対防御
-// =================================================================
-function showLoading() {
-  document.getElementById("loadingOverlay").style.display = "flex";
-}
-function hideLoading() {
-  document.getElementById("loadingOverlay").style.display = "none";
-}
-
-// ページ読み込み完了時にログインフォームの「送信の暴走」を完全にロックする
-document.addEventListener("DOMContentLoaded", () => {
-  const loginForm = document.getElementById("loginForm");
-  if (loginForm) {
-    loginForm.addEventListener("submit", function (event) {
-      // 【絶対防御】ブラウザがURLにパスワードを書き込む通常の送信動作をここで100%強制ストップします
-      event.preventDefault();
-      executeSecureLogin();
-    });
-  }
-});
-
-// キーボードのEnterキーでのログインを処理する
-document.addEventListener("keydown", function (event) {
-  if (event.key === "Enter") {
-    const loginPage = document.getElementById("loginPage");
-    if (loginPage && loginPage.style.display !== "none") {
-      executeSecureLogin();
-    }
-  }
-});
-
-// 安全なログイン実行関数（データはすべて暗号化して裏側でFirebaseに送信されます）
-function executeSecureLogin() {
-  showLoading();
-  
-  const idInput = document.getElementById("loginId").value;
-  const passInput = document.getElementById("password").value;
-
-  auth.signInWithEmailAndPassword(idInput + "@owners-portal.com", passInput)
-    .then((userCredential) => {
-      console.log("ログイン成功");
-      if (typeof preloadAllData === 'function') {
-        preloadAllData();
-      } else {
-        hideLoading();
-        document.getElementById("loginPage").style.display = "none";
-        document.getElementById("mainPage").style.display = "block";
+          `);
+          window.stop(); // ログインプログラムなどが起動するのを物理的に完全停止
+        }
+      } catch (e) {
+        console.warn("Maintenance check bypassed:", e.message);
       }
-    })
-    .catch((error) => {
-      hideLoading();
-      alert("ログインIDまたはパスワードが間違っています。");
-    });
-}
-
-// =================================================================
-// 4. Cookie同意バナーのボタンクリック連動関数
-// =================================================================
-window.setCookieConsent = function(isAccepted) {
-  const status = isAccepted ? 'granted' : 'denied';
-  localStorage.setItem(ANALYTICS_CONSENT_KEY, status);
-  
-  if (typeof gtag === 'function') {
-    gtag('consent', 'update', { 'analytics_storage': status });
-  }
-
-  const banner = document.getElementById('cookieConsentBanner');
-  const settingsBtn = document.getElementById('cookieConsentSettings');
-  if (banner) banner.hidden = true;
-  if (settingsBtn) settingsBtn.hidden = false;
-};
-
-window.showCookieConsent = function() {
-  const banner = document.getElementById('cookieConsentBanner');
-  const settingsBtn = document.getElementById('cookieConsentSettings');
-  if (banner) banner.hidden = false;
-  if (settingsBtn) settingsBtn.hidden = true;
-};
+    })();
+  </script>
+  <!-- ========================================== -->
