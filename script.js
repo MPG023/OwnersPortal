@@ -13,7 +13,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// メンテナンス画面の切替
+// ===== メンテナンス画面（Firebase Remote Config） =====
 const remoteConfig = firebase.remoteConfig();
 
 remoteConfig.settings = {
@@ -21,13 +21,27 @@ remoteConfig.settings = {
 };
 
 remoteConfig.defaultConfig = {
-  maintenance_enabled: false
+  is_maintenance: false
 };
 
 remoteConfig
   .fetchAndActivate()
   .then(() => {
-    if (!remoteConfig.getBoolean("maintenance_enabled")) return;
+    if (!remoteConfig.getBoolean("is_maintenance")) return;
+
+    // 後ろの画面をすべて隠す
+    [
+      "loginPage",
+      "portal",
+      "timeoutPage",
+      "cookieConsentBanner",
+      "cookieConsentSettings"
+    ].forEach((id) => {
+      const element = document.getElementById(id);
+      if (element) element.style.display = "none";
+    });
+
+    document.body.style.overflow = "hidden";
 
     const maintenanceScreen = document.createElement("div");
 
@@ -38,19 +52,63 @@ remoteConfig
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-      background: #f5f5f5;
-      color: #222;
-      text-align: center;
+      padding: 24px;
+      box-sizing: border-box;
+      background:
+        radial-gradient(circle at top right, #f9d9df 0, transparent 32%),
+        linear-gradient(135deg, #fff8f9 0%, #f4f4f4 100%);
       font-family: Arial, "Noto Sans JP", sans-serif;
+      text-align: center;
     `;
 
     maintenanceScreen.innerHTML = `
-      <div>
-        <h1 style="margin:0 0 18px;">ただいまメンテナンス中です</h1>
-        <p style="margin:0; line-height:1.8;">
+      <div style="
+        width: min(100%, 560px);
+        padding: 48px 32px;
+        box-sizing: border-box;
+        border: 1px solid #f0c7d0;
+        border-radius: 20px;
+        background: #ffffff;
+        box-shadow: 0 16px 42px rgba(80, 25, 35, 0.16);
+      ">
+        <div style="
+          width: 76px;
+          height: 76px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 24px;
+          border-radius: 50%;
+          background: #d4002a;
+          color: #fff;
+          font-size: 34px;
+          font-weight: bold;
+        ">!</div>
+
+        <p style="
+          margin: 0 0 12px;
+          color: #d4002a;
+          font-size: 13px;
+          font-weight: bold;
+          letter-spacing: 0.12em;
+        ">OWNERS PORTAL</p>
+
+        <h1 style="
+          margin: 0 0 20px;
+          color: #222;
+          font-size: 27px;
+          line-height: 1.5;
+        ">ただいまメンテナンス中です</h1>
+
+        <p style="
+          margin: 0;
+          color: #555;
+          font-size: 16px;
+          line-height: 2;
+        ">
           ご不便をおかけして申し訳ございません。<br>
-          しばらくしてから再度お試しください。
+          システムメンテナンスのため、現在ご利用いただけません。<br>
+          しばらくしてから、再度お試しください。
         </p>
       </div>
     `;
