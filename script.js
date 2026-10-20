@@ -13,6 +13,34 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+const remoteConfig = firebase.remoteConfig();
+
+remoteConfig.defaultConfig = {
+  maintenance_enabled: false
+};
+
+remoteConfig.fetchAndActivate().then(() => {
+  if (remoteConfig.getBoolean("maintenance_enabled")) {
+    document.body.innerHTML = `
+      <div style="
+        min-height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        text-align:center;
+        font-family:Arial, sans-serif;
+        background:#f5f5f5;
+        color:#222;
+      ">
+        <div>
+          <h1>ただいまメンテナンス中です</h1>
+          <p>ご不便をおかけして申し訳ございません。<br>しばらくしてから再度お試しください。</p>
+        </div>
+      </div>
+    `;
+  }
+});
+
 // ===== 認証付きデータ取得API（Google Apps Script） =====
 // お知らせ・募集状況・書類・修繕状況・年間収支・点検レポートは、すべてこの
 // 認証付きAPI経由で取得する（ログインしていない人はデータを取得できない）。
