@@ -22,14 +22,14 @@ remoteConfig.settings = {
 };
 
 remoteConfig.defaultConfig = {
-  is_maintenance: false
+  maintenance_enabled: false
 };
 
 async function checkMaintenanceMode() {
   try {
     await remoteConfig.fetchAndActivate();
 
-    const isMaintenance = remoteConfig.getBoolean("is_maintenance");
+    const isMaintenance = remoteConfig.getBoolean("maintenance_enabled");
 
     // false のときは通常どおりサイトを表示する
     if (!isMaintenance) return;
