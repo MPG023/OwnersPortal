@@ -14,34 +14,28 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ==========================================
-// ★ Firebase Remote Config によるメンテナンス画面制御（安全対策版）
+// ★ Firebase Remote Config メンテナンス & Cookie同意バナー完全連動処理
 // ==========================================
-(async function checkMaintenanceStatus() {
-  // 1. ライブラリが正しく読み込まれているかチェック（エラー巻き添え防止）
+(async function initRemoteConfigAndConsent() {
+  // 1. ライブラリが正しく読み込まれているかチェック
   if (typeof firebase.remoteConfig !== 'function') {
-    console.warn("[Remote Config] ライブラリが読み込まれていないため、チェックをスキップします。");
+    console.warn("[Remote Config] ライブラリ未検出のため、通常起動します。");
+    // ライブラリがない場合でも、既存のCookieバナーチェックを正常に動かす
+    checkCookieConsentBanner();
     return;
   }
 
   try {
     const remoteConfig = firebase.remoteConfig();
-
-    // 動作安定のため、最低キャッシュ時間を1分（60秒）に設定
-    remoteConfig.settings.minimumFetchIntervalMillis = 60000;
-
-    // 保険としての標準状態（非メンテナンス）
-    remoteConfig.defaultConfig = {
-      is_maintenance: false
-    };
+    remoteConfig.settings.minimumFetchIntervalMillis = 60000; // キャッシュ1分
+    remoteConfig.defaultConfig = { is_maintenance: false };
 
     // 2. Firebaseサーバーから最新のスイッチ状態を取得
     await remoteConfig.fetchAndActivate();
-    
-    // 3. 「is_maintenance」の値（true または false）を読み出す
     const isMaintenance = remoteConfig.getBoolean('is_maintenance');
     
     if (isMaintenance) {
-      // 4. もし「true」なら、画面をメンテナンス専用に書き換える
+      // 3. メンテナンス中（true）なら、画面を完全に上書きロックする
       document.body.innerHTML = `
         <div style="text-align:center; padding:100px 20px; font-family:sans-serif; background-color:#fafafa; min-height:100vh; box-sizing:border-box;">
           <div style="max-width:500px; margin:0 auto; background:#fff; padding:40px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
@@ -55,12 +49,40 @@ const db = firebase.firestore();
           </div>
         </div>
       `;
-      console.log("[Remote Config] メンテナンス画面を表示しました。");
+      console.log("[Remote Config] メンテナンス画面を表示したため、処理を終了します。");
+      return; // メンテナンス中の場合はここで完全に処理を止める
     }
   } catch (error) {
-    console.warn("Remote Config Check:", error.message);
+    console.warn("Remote Config Check Error:", error.message);
   }
+
+  // 4. 【最重要】非メンテナンス時（通常時）は、Cookieバナーの記憶チェックを確実に実行する
+  checkCookieConsentBanner();
 })();
+
+// 通常時にCookie同意バナーの過去の保存状態を読み込んで表示・非表示を制御する関数
+function checkCookieConsentBanner() {
+  const ANALYTICS_CONSENT_KEY = 'analytics_consent_status';
+  const savedStatus = localStorage.getItem(ANALYTICS_CONSENT_KEY);
+
+  const banner = document.getElementById('cookieConsentBanner');
+  const settingsBtn = document.getElementById('cookieConsentSettings');
+
+  if (savedStatus === 'granted' || savedStatus === 'denied') {
+    // すでに過去に選択済みの場合は、バナーを非表示にして設定ボタンを出す
+    if (banner) banner.hidden = true;
+    if (settingsBtn) settingsBtn.hidden = false;
+    
+    // 同意済みの場合はGoogleアナリティクスを動かす
+    if (savedStatus === 'granted' && typeof gtag === 'function') {
+      gtag('consent', 'update', { 'analytics_storage': 'granted' });
+    }
+  } else {
+    // まだ未選択の新規アクセスの場合はバナーを表示する
+    if (banner) banner.hidden = false;
+    if (settingsBtn) settingsBtn.hidden = true;
+  }
+}
 // ==========================================
 
 
