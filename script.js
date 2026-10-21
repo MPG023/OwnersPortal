@@ -108,7 +108,7 @@ async function checkMaintenanceMode() {
           color: #222222;
           font-size: 28px;
           line-height: 1.5;
-        ">ただいまメンテナンス中です</h1>
+        ">緊急メンテナンス中です</h1>
 
         <p style="
           margin: 0;
