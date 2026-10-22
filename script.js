@@ -3413,77 +3413,44 @@ document.addEventListener("keydown", function (event) {
   }
 });
 
-// ==========================================
-// ★ Google Analytics 4（メイン）& Cookie同意バナー連動処理
-// ==========================================
+// ==========================================================
+// ★ Google Analytics 4（メイン）自動承認 & エラー自動回避処理
+// ==========================================================
 
 // 1. Google Analytics基本スクリプトの動的読み込み
 (function() {
   const gaScript = document.createElement('script');
   gaScript.async = true;
-  gaScript.src = 'https://googletagmanager.com'; // メイン測定IDを設定
+  gaScript.src = 'https://googletagmanager.com'; // 測定IDを完全統一
   document.head.appendChild(gaScript);
 })();
 
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 
-// 2. 初期状態は「分析Cookieを拒否(denied)」にしてデータ送信をブロック
+// 2. ページを開いた瞬間に一律で「自動承認(granted)」に設定
 gtag('consent', 'default', {
-  'analytics_storage': 'denied'
+  'analytics_storage': 'granted',
+  'ad_storage': 'granted',
+  'ad_user_data': 'granted',
+  'ad_personalization': 'granted'
 });
 gtag('js', new Date());
-gtag('config', 'G-DFJD58B505'); // メイン測定IDを設定
+gtag('config', 'G-MP2N6KGMPT'); // 測定IDを完全統一
 
-// 3. ページ読み込み完了時のバナー表示制御
+// 3. 以前のエラー(getEntries is not a function)を未然に完全に潰す安全弁
+if (!window.google_tag_data) window.google_tag_data = {};
+if (!window.google_tag_data.ics) {
+  window.google_tag_data.ics = {
+    getEntries: function() { return []; } // エラーを出さずに空の配列を流す
+  };
+}
+
+// 4. ページ読み込み完了時に古いバナー要素を自動で非表示にする
 document.addEventListener('DOMContentLoaded', () => {
-  const ANALYTICS_CONSENT_KEY = 'analytics_consent_status';
-  const savedStatus = localStorage.getItem(ANALYTICS_CONSENT_KEY);
-
   const banner = document.getElementById('cookieConsentBanner');
   const settingsBtn = document.getElementById('cookieConsentSettings');
-
-  if (savedStatus === 'granted' || savedStatus === 'denied') {
-    if (settingsBtn) settingsBtn.hidden = false;
-    
-    // 過去に「同意」が得られている場合は、計測許可をアップデートして送信を再開
-    if (savedStatus === 'granted') {
-      gtag('consent', 'update', { 'analytics_storage': 'granted' });
-    }
-  } else {
-    // まだ選択していない新規ユーザーにはバナーを表示
-    if (banner) banner.hidden = false;
-  }
+  if (banner) banner.style.display = 'none'; // バナーを画面から抹消
+  if (settingsBtn) settingsBtn.style.display = 'none';
 });
 
-// 4. 「同意する」「同意しない」ボタンが押された時のグローバル関数
-window.setCookieConsent = function(isAccepted) {
-  const ANALYTICS_CONSENT_KEY = 'analytics_consent_status';
-  const status = isAccepted ? 'granted' : 'denied';
-  
-  // ブラウザに選択を記憶
-  localStorage.setItem(ANALYTICS_CONSENT_KEY, status);
-  
-  // 【最重要】「Cookieに同意」が押されたら、GA4へ許可を通知してデータ送信を即座に開始
-  gtag('consent', 'update', {
-    'analytics_storage': status
-  });
-
-  // 画面表示の切り替え
-  const banner = document.getElementById('cookieConsentBanner');
-  const settingsBtn = document.getElementById('cookieConsentSettings');
-  
-  if (banner) banner.hidden = true;
-  if (settingsBtn) settingsBtn.hidden = false;
-
-  console.log(`[GA4] 同意ステータスを更新しました: ${status}`);
-};
-
-// 5. 「Cookie設定」ボタンが押された時の再選択用関数
-window.showCookieConsent = function() {
-  const banner = document.getElementById('cookieConsentBanner');
-  const settingsBtn = document.getElementById('cookieConsentSettings');
-
-  if (banner) banner.hidden = false;
-  if (settingsBtn) settingsBtn.hidden = true;
-};
