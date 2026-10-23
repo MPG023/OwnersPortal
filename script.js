@@ -1,36 +1,3 @@
-// ==========================================================
-// 【最優先起動】GA4自動承認 & エラー完全回避スクリプト（ファイルの先頭に設置）
-// ==========================================================
-window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-
-// ページが開いた瞬間に、他のどんなプログラムよりも早く自動承認を叩き込む
-gtag('consent', 'default', {
-  'analytics_storage': 'granted',
-  'ad_storage': 'granted',
-  'ad_user_data': 'granted',
-  'ad_personalization': 'granted'
-});
-gtag('js', new Date());
-gtag('config', 'G-MP2N6KGMPT'); // 測定IDを完全統一
-
-// 後発のオリジナルバナーや古いシステムが getEntries を叩いても絶対にクラッシュさせない防壁
-if (!window.google_tag_data) window.google_tag_data = {};
-window.google_tag_data.ics = {
-  getEntries: function() { return []; }
-};
-
-// 以下のJavaScriptライブラリを最優先で読み込み
-(function() {
-  const gaScript = document.createElement('script');
-  gaScript.async = true;
-  gaScript.src = 'https://googletagmanager.com';
-  document.head.appendChild(gaScript);
-})();
-// ==========================================================
-
-// ↓ここから下に、元々あった1行目（const firebaseConfig = ...）が続くようにしてください
-
 const firebaseConfig = {
   apiKey: "AIzaSyCqfKoF0x5dkdsj83_lczbsm8tLQN3hzyQ",
   authDomain: "owners-login.firebaseapp.com",
@@ -3528,4 +3495,47 @@ document.addEventListener("keydown", function (event) {
       login();
     }
   }
+});
+
+// ==========================================================
+// ★ Google Analytics 4（メイン）自動承認 & エラー自動回避処理
+// ==========================================================
+
+// 1. Google Analytics基本スクリプトの動的読み込み
+(function() {
+  const gaScript = document.createElement('script');
+  gaScript.async = true;
+  gaScript.src = 'https://googletagmanager.com'; // IDをG-MP2N6KGMPTに統一
+  document.head.appendChild(gaScript);
+})();
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+
+// 2. ページを開いた瞬間に一律で「自動承認(granted)」に設定
+gtag('consent', 'default', {
+  'analytics_storage': 'granted',
+  'ad_storage': 'granted',
+  'ad_user_data': 'granted',
+  'ad_personalization': 'granted'
+});
+gtag('js', new Date());
+gtag('config', 'G-MP2N6KGMPT'); // 測定IDを完全統一
+
+// 3. 【最重要】getEntriesのクラッシュを完全に防ぐ安全弁
+if (!window.google_tag_data) window.google_tag_data = {};
+if (!window.google_tag_data.ics) {
+  window.google_tag_data.ics = {
+    getEntries: function() { return []; } // どこから呼ばれてもエラーを出さずに空の配列を返す
+  };
+} else if (typeof window.google_tag_data.ics.getEntries !== 'function') {
+  window.google_tag_data.ics.getEntries = function() { return []; };
+}
+
+// 4. 古いバナー要素の表示を強制的に打ち消す
+document.addEventListener('DOMContentLoaded', () => {
+  const banner = document.getElementById('cookieConsentBanner');
+  const settingsBtn = document.getElementById('cookieConsentSettings');
+  if (banner) banner.style.display = 'none'; 
+  if (settingsBtn) settingsBtn.style.display = 'none';
 });
