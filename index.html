@@ -431,6 +431,28 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
 
   </section>
 
+	<style>
+  /* 駐車場のボックスを住居の枠線・デザインと完全に強制統一する設定 */
+  #komatsu-status .status-table,
+  #building-status .status-table {
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    border: 1px solid #e0e0e0 !important; /* 住居と同じ外枠の線 */
+    border-radius: 8px !important;
+    overflow: hidden !important;
+  }
+  #komatsu-status .status-table th,
+  #komatsu-status .status-table td,
+  #building-status .status-table th,
+  #building-status .status-table td {
+    border: 1px solid #e0e0e0 !important; /* 住居と同じ縦横の区切り線 */
+    padding: 12px 8px !important; /* 住居と同じ上下の余白（詰まりを解消） */
+    vertical-align: middle !important; /* 上下中央揃え */
+  }
+</style>
+
+<!-- ここから下に、元々あった <section id="komatsu-status" class="page"> のコードを続けてください -->
+
   <section id="komatsu-status" class="page">
 	  <div class="building-info-page-title">
       <span class="material-icons" aria-hidden="true">apartment</span>
