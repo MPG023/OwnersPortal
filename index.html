@@ -431,28 +431,55 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
 
   </section>
 
-	<style>
-  /* 駐車場のボックスを住居の枠線・デザインと完全に強制統一する設定 */
-  #komatsu-status .status-table,
-  #building-status .status-table {
-    border-collapse: collapse !important;
+<style>
+  /* 住居のテーブルデザインを駐車場テーブル（ボックス）へ完全強制コピー・統一化 */
+  .page .status-table {
+    width: 100% !important;
+    display: table !important;
+    border-collapse: separate !important;
     border-spacing: 0 !important;
-    border: 1px solid #e0e0e0 !important; /* 住居と同じ外枠の線 */
-    border-radius: 8px !important;
+    border: 1px solid #e2e8f0 !important; /* 住居と共通のグレーの外枠線 */
+    border-radius: 8px !important; /* ボックスの四隅の角丸 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important; /* ボックスの影 */
     overflow: hidden !important;
+    margin-bottom: 24px !important;
+    background-color: #ffffff !important; /* ボックス内の背景白 */
   }
-  #komatsu-status .status-table th,
-  #komatsu-status .status-table td,
-  #building-status .status-table th,
-  #building-status .status-table td {
-    border: 1px solid #e0e0e0 !important; /* 住居と同じ縦横の区切り線 */
-    padding: 12px 8px !important; /* 住居と同じ上下の余白（詰まりを解消） */
-    vertical-align: middle !important; /* 上下中央揃え */
+
+  /* ヘッダー部分（部屋No.や駐車場コードの並び）の統一 */
+  .page .status-table thead th {
+    background-color: #f8fafc !important; /* ヘッダーの背景色 */
+    color: #334155 !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    padding: 14px 16px !important; /* 上下の詰まりを完全に解消する余白 */
+    border-bottom: 2px solid #e2e8f0 !important; /* ヘッダー下の太めの区切り線 */
+    border-right: 1px solid #e2e8f0 !important;
+    font-size: 14px !important;
+    vertical-align: middle !important;
+  }
+
+  /* ボディ部分（01010や001、ご入居済などのセル）の統一 */
+  .page .status-table tbody td {
+    padding: 14px 16px !important; /* 住居のボックスと完全に同じ上下左右の余白サイズ */
+    border-bottom: 1px solid #edf2f7 !important; /* 行ごとの横の区切り線 */
+    border-right: 1px solid #edf2f7 !important; /* 列ごとの縦の区切り線 */
+    color: #2d3748 !important;
+    font-size: 14px !important;
+    vertical-align: middle !important; /* 文字の上下の配置を中央揃えに強制統一 */
+    background: #ffffff !important;
+  }
+
+  /* テーブルの右端と下端の余計な二重線を防ぐ処理 */
+  .page .status-table thead th:last-child,
+  .page .status-table tbody td:last-child {
+    border-right: none !important;
+  }
+  .page .status-table tbody tr:last-child td {
+    border-bottom: none !important;
   }
 </style>
-
-<!-- ここから下に、元々あった <section id="komatsu-status" class="page"> のコードを続けてください -->
-
+	
   <section id="komatsu-status" class="page">
 	  <div class="building-info-page-title">
       <span class="material-icons" aria-hidden="true">apartment</span>
