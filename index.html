@@ -430,67 +430,6 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
     </div>
 
   </section>
-
-	<style>
-  /* 1. ボックス全体のサイズ・外枠を住居と完全に一致させる */
-  .page .status-table {
-    width: 100% !important;
-    max-width: 100% !important;
-    display: table !important;
-    table-layout: fixed !important; /* 【最重要】文字数に関わらず列幅を強制固定する設定 */
-    border-collapse: separate !important;
-    border-spacing: 0 !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 8px !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-    overflow: hidden !important;
-    margin-bottom: 24px !important;
-    background-color: #ffffff !important;
-  }
-
-  /* 2. 【最重要】各ボックス（列）の横幅の比率を住居と100%同じサイズに固定する */
-  .page .status-table th:nth-child(1), .page .status-table td:nth-child(1) { width: 15% !important; } /* 部屋No. / 駐車場CD */
-  .page .status-table th:nth-child(2), .page .status-table td:nth-child(2) { width: 15% !important; } /* 募集状況 */
-  .page .status-table th:nth-child(3), .page .status-table td:nth-child(3) { width: 15% !important; } /* 入居日 */
-  .page .status-table th:nth-child(4), .page .status-table td:nth-child(4) { width: 18% !important; } /* 家賃 / 駐車料 */
-  .page .status-table th:nth-child(5), .page .status-table td:nth-child(5) { width: 15% !important; } /* 入居者名 */
-  .page .status-table th:nth-child(6), .page .status-table td:nth-child(6) { width: 27% !important; } /* 備考欄 */
-
-  /* 3. ヘッダーの高さ・文字位置の統一 */
-  .page .status-table thead th {
-    background-color: #f8fafc !important;
-    color: #334155 !important;
-    font-weight: 600 !important;
-    text-align: center !important;
-    padding: 14px 12px !important; /* 上下の高さを均一にする余白 */
-    border-bottom: 2px solid #e2e8f0 !important;
-    border-right: 1px solid #e2e8f0 !important;
-    font-size: 14px !important;
-    vertical-align: middle !important;
-    white-space: nowrap !important; /* 文字数による不自然な改行を防ぐ */
-  }
-
-  /* 4. データセルの高さ・行の大きさを統一（備考が空欄でも潰れない仕様） */
-  .page .status-table tbody td {
-    padding: 14px 12px !important; /* 住居のボックスと完全に同じ上下の高さサイズ */
-    border-bottom: 1px solid #edf2f7 !important;
-    border-right: 1px solid #edf2f7 !important;
-    color: #2d3748 !important;
-    font-size: 14px !important;
-    vertical-align: middle !important;
-    background: #ffffff !important;
-    line-height: 1.5 !important; /* 縦の大きさを一定に保つプロパティ */
-  }
-
-  /* 右端と下端の二重線防止処理 */
-  .page .status-table thead th:last-child,
-  .page .status-table tbody td:last-child {
-    border-right: none !important;
-  }
-  .page .status-table tbody tr:last-child td {
-    border-bottom: none !important;
-  }
-</style>
 	
   <section id="komatsu-status" class="page">
 	  <div class="building-info-page-title">
