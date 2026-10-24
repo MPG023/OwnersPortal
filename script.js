@@ -2249,25 +2249,29 @@ function renderRecruitStatusTable(tbodyId, rows) {
   );
 
   rows.forEach((c) => {
-    const [, , roomNo, status, moveInDate, rent, tenantName, note] = c;
+    // スプレッドシートから読み込んだ列データを分解
+    const [, , roomOrPkgNo, status, moveInDate, price, tenantName, note] = c;
 
+    // 備考欄にURL（ホームズ掲載）がある場合のリンク処理
     const noteCell =
       note && note.startsWith("http")
         ? `<a href="${note}" target="_blank" class="eheya-link">● ホームズ掲載アーカイブページを見る</a>`
         : note || "";
 
+    // 【最重要】住居と駐車場の出力を完全に同じクラス・構造に統一
     tbody.innerHTML += `
     <tr>
-      <td class="status-room-title" data-label="${headers[0]}">${roomNo || ""}</td>
-      <td data-label="募集状況"><span class="status-cell-value">${status || ""}</span></td>
-      <td data-label="入居日"><span class="status-cell-value">${moveInDate || ""}</span></td>
-      <td data-label="${headers[3]}"><span class="status-cell-value">${rent || ""}</span></td>
-      <td data-label="入居者名"><span class="status-cell-value">${tenantName || ""}</span></td>
-      <td class="status-note-cell" data-label="備考"><span class="status-cell-value">${noteCell}</span></td>
+      <td class="status-room-title" data-label="${headers[0]}">${roomOrPkgNo || ""}</td>
+      <td data-label="${headers[1]}"><span class="status-cell-value">${status || ""}</span></td>
+      <td data-label="${headers[2]}"><span class="status-cell-value">${moveInDate || ""}</span></td>
+      <td data-label="${headers[3]}"><span class="status-cell-value">${price || ""}</span></td>
+      <td data-label="${headers[4]}"><span class="status-cell-value">${tenantName || ""}</span></td>
+      <td class="status-note-cell" data-label="${headers[5]}"><span class="status-cell-value">${noteCell}</span></td>
     </tr>
     `;
   });
 }
+
 
 let documentsData = [];
 let documentsLoaded = false;
