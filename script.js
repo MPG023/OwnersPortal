@@ -108,7 +108,7 @@ async function checkMaintenanceMode() {
           color: #222222;
           font-size: 28px;
           line-height: 1.5;
-        ">緊急メンテナンス中です</h1>
+        ">ただいまメンテナンス中です</h1>
 
         <p style="
           margin: 0;
@@ -119,6 +119,8 @@ async function checkMaintenanceMode() {
           ご不便をおかけして、大変申し訳ございません。<br>
           システムメンテナンスのため、現在ご利用いただけません。<br>
           恐れ入りますが、メンテナンス終了まで今しばらくお待ちください。
+          
+          © 2026 OwnersPotal
         </p>
       </main>
     `;
