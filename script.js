@@ -3502,21 +3502,14 @@ document.addEventListener("keydown", function (event) {
 });
 
 // ==========================================================
-// ★ Google Analytics 4（メイン）自動承認 & エラー自動回避処理
+// ★ Google Analytics 4（メイン）完全同期・自動承認処理
 // ==========================================================
 
-// 1. Google Analytics基本スクリプトの動的読み込み
-(function() {
-  const gaScript = document.createElement('script');
-  gaScript.async = true;
-  gaScript.src = 'https://googletagmanager.com'; // IDをG-MP2N6KGMPTに統一
-  document.head.appendChild(gaScript);
-})();
-
+// 1. dataLayerの初期化と自動承認のセット（※何よりも最初に実行させるための最優先設定）
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 
-// 2. ページを開いた瞬間に一律で「自動承認(granted)」に設定
+// どんな時でも強制的に最優先で「承認(granted)」状態をブラウザに固定
 gtag('consent', 'default', {
   'analytics_storage': 'granted',
   'ad_storage': 'granted',
@@ -3524,9 +3517,9 @@ gtag('consent', 'default', {
   'ad_personalization': 'granted'
 });
 gtag('js', new Date());
-gtag('config', 'G-MP2N6KGMPT'); // 測定IDを完全統一
+gtag('config', 'G-MP2N6KGMPT'); // 測定IDをFirebase側の正しいIDに統一
 
-// 3. 【最重要】getEntriesのクラッシュを完全に防ぐ安全弁
+// 2. 【最重要】getEntriesのクラッシュを完全に防ぐ安全弁
 if (!window.google_tag_data) window.google_tag_data = {};
 if (!window.google_tag_data.ics) {
   window.google_tag_data.ics = {
@@ -3536,7 +3529,15 @@ if (!window.google_tag_data.ics) {
   window.google_tag_data.ics.getEntries = function() { return []; };
 }
 
-// 4. 古いバナー要素の表示を強制的に打ち消す
+// 3. Google Analytics基本スクリプトの動的読み込み
+(function() {
+  const gaScript = document.createElement('script');
+  gaScript.async = true;
+  gaScript.src = 'https://googletagmanager.com';
+  document.head.appendChild(gaScript);
+})();
+
+// 4. 古いバナー要素が画面に残っている場合の自動非表示制御
 document.addEventListener('DOMContentLoaded', () => {
   const banner = document.getElementById('cookieConsentBanner');
   const settingsBtn = document.getElementById('cookieConsentSettings');
