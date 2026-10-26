@@ -15,78 +15,34 @@
 	
 <script src="https://gstatic.com"></script>
   	  
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-DFJD58B505"></script>
+<!-- Google tag (gtag.js) 本体読み込み -->
+<script async src="https://googletagmanager.com"></script>
 
 <script>
+// ページを開いた瞬間に一律で「自動承認」に設定してデータを即座に送信
 window.dataLayer = window.dataLayer || [];
-
 function gtag(){dataLayer.push(arguments);}
-
-gtag('consent', 'default', {
-  'analytics_storage': 'denied',
-  'ad_storage': 'denied',
-  'ad_user_data': 'denied',
-  'ad_personalization': 'denied',
+gtag('consent', 'default', { 
+  'analytics_storage': 'granted', 
+  'ad_storage': 'granted', 
+  'ad_user_data': 'granted', 
+  'ad_personalization': 'granted',
   'functionality_storage': 'granted',
   'security_storage': 'granted'
 });
-
-const analyticsConsentKey = 'owners_portal_analytics_consent';
-const savedAnalyticsConsent = localStorage.getItem(analyticsConsentKey);
-
-if (savedAnalyticsConsent === 'granted') {
-  gtag('consent', 'update', {
-    'analytics_storage': 'granted'
-  });
-}
-
-function setCookieConsent(allowAnalytics) {
-  const analyticsStorage = allowAnalytics ? 'granted' : 'denied';
-  gtag('consent', 'update', {
-    'analytics_storage': analyticsStorage,
-    'ad_storage': 'denied',
-    'ad_user_data': 'denied',
-    'ad_personalization': 'denied'
-  });
-  localStorage.setItem(analyticsConsentKey, analyticsStorage);
-  document.getElementById('cookieConsentBanner').hidden = true;
-  document.getElementById('cookieConsentSettings').hidden = false;
-}
-
-function showCookieConsent() {
-  document.getElementById('cookieConsentBanner').hidden = false;
-}
-
 gtag('js', new Date());
+gtag('config', 'G-MP2N6KGMPT'); // 測定IDをFirebase側と完全統一
 
-gtag('config', 'G-DFJD58B505');
-</script><link rel='stylesheet' href='https://fonts.googleapis.com/icon?family=Material+Icons'><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap"><link rel="stylesheet" href="./style.css">
-
-  </head>
-    
-  <body>
-  <link rel='stylesheet' href='https://fonts.googleapis.com/icon?family=Material+Icons'>
-
-<section id="cookieConsentBanner" class="cookie-consent-banner" aria-label="Cookieの同意設定" aria-live="polite" hidden>
-  <div class="cookie-consent-copy">
-    <strong>Cookieの設定</strong>
-    <p>アクセス状況の把握とサービス改善のため、Google Analyticsを使用します。「Cookieに同意」を選択するまで分析Cookieは使用しません。広告目的のCookieは使用しません。</p>
-  </div>
-  <div class="cookie-consent-actions">
-    <button type="button" class="cookie-consent-reject" onclick="setCookieConsent(false)">同意しない</button>
-    <button type="button" class="cookie-consent-accept" onclick="setCookieConsent(true)">Cookieに同意</button>
-  </div>
-</section>
-<button id="cookieConsentSettings" class="cookie-consent-settings" type="button" onclick="showCookieConsent()" hidden>Cookie設定</button>
-<script>
-if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getItem(analyticsConsentKey) === 'denied') {
-  document.getElementById('cookieConsentSettings').hidden = false;
-} else {
-  document.getElementById('cookieConsentBanner').hidden = false;
+// getEntriesエラーを未然に防ぐ防壁
+if (!window.google_tag_data) window.google_tag_data = {};
+if (!window.google_tag_data.ics) {
+  window.google_tag_data.ics = {
+    getEntries: function() { return []; }
+  };
 }
 </script>
 
+	  
 <div id="loginPage" class="login-page">
 
   <div class="login-box">
