@@ -15,11 +15,11 @@
 	
 <script src="https://gstatic.com"></script>
   	  
-<!-- Google tag (gtag.js) 本体読み込み -->
+<!-- Google tag (gtag.js) 本体読み込み（測定IDをFirebase側と完全一本化） -->
 <script async src="https://googletagmanager.com"></script>
 
 <script>
-// ページを開いた瞬間に一律で「自動承認」に設定してデータを即座に送信
+// 1. ページを開いた瞬間に一律で「自動承認」に設定してデータを即座に送信（タイミング問題を解消）
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('consent', 'default', { 
@@ -31,17 +31,22 @@ gtag('consent', 'default', {
   'security_storage': 'granted'
 });
 gtag('js', new Date());
-gtag('config', 'G-MP2N6KGMPT'); // 測定IDをFirebase側と完全統一
+gtag('config', 'G-MP2N6KGMPT'); // 測定IDを完全統一
 
-// getEntriesエラーを未然に防ぐ防壁
+// 2. getEntriesのエラーを未然に防ぐ防壁
 if (!window.google_tag_data) window.google_tag_data = {};
 if (!window.google_tag_data.ics) {
   window.google_tag_data.ics = {
     getEntries: function() { return []; }
   };
+} else if (typeof window.google_tag_data.ics.getEntries !== 'function') {
+  window.google_tag_data.ics.getEntries = function() { return []; };
 }
-</script>
 
+// 3. 【最重要】消去したバナー用の古い関数が、他のJSファイルから呼び出された際のエラーフリーズを防ぐ安全弁
+function setCookieConsent(allowAnalytics) { return; }
+function showCookieConsent() { return; }
+</script>
 	  
 <div id="loginPage" class="login-page">
 
