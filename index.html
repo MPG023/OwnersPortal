@@ -335,45 +335,20 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
         <p>建物の状況</p>
       </div>
 
-      <div class="home-card" onclick="openInspectionMenu()">
-        <span class="material-icons">fact_check</span>
-        <p>建物定期報告書</p>
-      </div>
-
-      <div class="home-card" onclick="openRepairMenu()">
-        <span class="material-icons">construction</span>
-        <p>修繕工事の状況</p>
-      </div>
-
-      <div class="home-card" onclick="openPhotoBuildingMenu()">
-        <span class="material-icons">photo_library</span>
-        <p>建物に関する写真</p>
-      </div>
-
       <div class="home-card" onclick="openPaymentMenu()">
         <span class="material-icons">payments</span>
         <p>お支払いの状況</p>
       </div>
 
-      <div class="home-card" onclick="showPage('noticeListPage')">
-
-        <div class="icon-wrap">
-          <span class="material-icons">campaign</span>
-          <span id="noticeCountHome" class="notice-badge"></span>
-        </div>
-
-        <p>お知らせ</p>
-
-      </div>
-
-      <div class="home-card" onclick="showPage('ownerInfo')">
-        <span class="material-icons">settings</span>
-        <p>設定</p>
-      </div>
-
       <div class="home-card" onclick="showPage('dashboard')">
         <span class="material-icons">bar_chart</span>
         <p>ダッシュボード</p>
+      </div>
+
+		<div class="home-card" onclick="showPage('inquiry')">
+        <span class="material-icons">Mail Person</span>
+        <p>お問い合わせ</p>
+		<p>※機能実装までお待ちください。</p>	
       </div>
 
     </div>
