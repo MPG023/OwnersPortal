@@ -305,7 +305,7 @@ const properties = {
     office: "塩尻",
     staff: "小松　泰輝",
     salesstaff: "-",
-    inspectionDate: "2026/10/27　(アフターサービス)",
+    inspectionDate: "2026/10/27　(アフターサービス44年点検)",
     cleaningDate: "2026/10/31",
     contractDate: "-",
     completion: "1982/10/25",
