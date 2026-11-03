@@ -2226,7 +2226,7 @@ div {
 }
 
 .icon-wrap .material-icons {
-  font-size: px; /* 他のアイコンと同じサイズ */
+  font-size: 42px; /* 他のアイコンと同じサイズ */
   color: #c8102e;
 }
 
