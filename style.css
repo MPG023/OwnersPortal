@@ -3599,13 +3599,13 @@ div {
 /* スマホ・タブレットのみ：下部メニューの通知件数バッジを確実に拡大 */
 @media screen and (max-width: 1024px) {
   .bottom-nav .icon-wrap .notice-badge {
-    width: 30px !important;
-    height: 30px !important;
-    min-width: 30px !important;
-    min-height: 30px !important;
-    font-size: 16px !important;
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    font-size: 13px !important;
     top: -9px !important;
     right: -12px !important;
-    line-height: 30px !important;
+    line-height: 24px !important;
   }
 }
