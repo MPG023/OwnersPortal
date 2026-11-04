@@ -3597,7 +3597,7 @@ div {
 }
 
 
-/* スマホ・タブレットのみ：通知件数を控えめに太くする */
+/* スマホ・タブレットのみ：通知件数を控えめに太くする（タブレット横向きも対象） */
 @media screen and (max-width: 1366px) {
   .bottom-nav .icon-wrap .notice-badge {
     width: 24px !important;
@@ -3611,13 +3611,6 @@ div {
     text-shadow: 0 0 0.2px #fff !important;
     top: -9px !important;
     right: -12px !important;
-
-    /* 数字を中央に配置 */
-    line-height: 1 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
-    transform: translateY(-1px);
+    line-height: 24px !important;
   }
 }
