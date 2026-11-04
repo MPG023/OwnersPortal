@@ -3596,7 +3596,7 @@ div {
   }
 }
 
-/* スマホ・タブレットのみ：下部メニューの通知件数バッジを確実に拡大 */
+/* スマホ・タブレットのみ：下部メニューの通知件数バッジを確実に拡大・太字 */
 @media screen and (max-width: 1024px) {
   .bottom-nav .icon-wrap .notice-badge {
     width: 24px !important;
@@ -3604,6 +3604,7 @@ div {
     min-width: 24px !important;
     min-height: 24px !important;
     font-size: 13px !important;
+    font-weight: 700 !important;
     top: -9px !important;
     right: -12px !important;
     line-height: 24px !important;
