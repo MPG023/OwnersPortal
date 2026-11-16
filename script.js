@@ -140,7 +140,7 @@ const SECURE_API_URL =
   "https://script.google.com/macros/s/AKfycbxSnwnJiR_dtybKS40qVqV3sG7IfN_XDqnbofAkLv2ikwzs2w1LNhbVYRnJj88pFsAhoA/exec";
 
 // Deploy VersionHistory.gs as a separate Google Apps Script web app and paste its URL here.
-const VERSION_HISTORY_API_URL = "";
+const VERSION_HISTORY_API_URL = "1T9Cla2aPxAKNMSAzqmKzltkCFoM12g-jbDhU9SxdhIc";
 
 // type: "notices" / "recruit" / "documents" / "repair" / "incomeStatement" /
 //       "inspectionBasic" / "inspectionCheck" / "inspectionPhoto" /
