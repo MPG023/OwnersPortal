@@ -139,6 +139,9 @@ checkMaintenanceMode();
 const SECURE_API_URL =
   "https://script.google.com/macros/s/AKfycbxSnwnJiR_dtybKS40qVqV3sG7IfN_XDqnbofAkLv2ikwzs2w1LNhbVYRnJj88pFsAhoA/exec";
 
+// Deploy VersionHistory.gs as a separate Google Apps Script web app and paste its URL here.
+const VERSION_HISTORY_API_URL = "";
+
 // type: "notices" / "recruit" / "documents" / "repair" / "incomeStatement" /
 //       "inspectionBasic" / "inspectionCheck" / "inspectionPhoto" /
 //       "inspectionSectionNote" / "inspectionSummary" / "inspectionOccupancy" /
@@ -976,6 +979,10 @@ function showPage(pageId) {
         loadNotices();
       }
 
+      if (pageId === "versionHistory") {
+        loadVersionHistory();
+      }
+
       if (pageId === "paymentPage") {
         loadPayments();
       }
@@ -1003,6 +1010,132 @@ function showPage(pageId) {
     }
   }, 500);
 }
+
+async function requestVersionHistory(action, data = {}) {
+  if (!VERSION_HISTORY_API_URL) {
+    throw new Error("バージョン履歴APIのURLがまだ設定されていません。");
+  }
+
+  const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+  if (!idToken) {
+    throw new Error("ログインしていません。再度ログインしてください。");
+  }
+
+  const response = await fetch(VERSION_HISTORY_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action, idToken, ...data }),
+    cache: "no-store"
+  });
+  const result = await response.json();
+
+  if (!response.ok || !result || result.ok !== true) {
+    throw new Error(result?.message || "バージョン履歴APIとの通信に失敗しました。");
+  }
+
+  return result;
+}
+
+function createVersionHistoryEntry(entry) {
+  const article = document.createElement("article");
+  article.className = "version-history-entry";
+
+  const header = document.createElement("div");
+  header.className = "version-history-entry-header";
+
+  const version = document.createElement("h3");
+  version.textContent = entry.version;
+
+  const date = document.createElement("time");
+  date.className = "version-history-entry-date";
+  date.dateTime = entry.date;
+  date.textContent = entry.date;
+
+  const description = document.createElement("p");
+  description.className = "version-history-entry-description";
+  description.textContent = entry.description;
+
+  header.append(version, date);
+  article.append(header, description);
+  return article;
+}
+
+async function loadVersionHistory() {
+  const status = document.getElementById("versionHistoryStatus");
+  const list = document.getElementById("versionHistoryList");
+  const form = document.getElementById("versionHistoryForm");
+  if (!status || !list || !form) return;
+
+  status.textContent = "バージョン履歴を読み込んでいます。";
+  list.replaceChildren();
+
+  try {
+    const result = await requestVersionHistory("list");
+    if (!Array.isArray(result.entries)) {
+      throw new Error("APIから正しい履歴データが返されませんでした。");
+    }
+
+    form.hidden = result.canAdd !== true;
+    result.entries.forEach((entry) => {
+      list.appendChild(createVersionHistoryEntry(entry));
+    });
+
+    if (result.entries.length === 0) {
+      status.textContent = "バージョン履歴はまだありません。";
+    } else {
+      status.textContent = result.canAdd
+        ? "履歴を新しい順に表示しています。"
+        : "履歴を新しい順に表示しています。追加は管理者のみ行えます。";
+    }
+  } catch (error) {
+    console.error("バージョン履歴の読み込みに失敗しました。", error);
+    form.hidden = true;
+    status.textContent = error.message || "バージョン履歴を読み込めませんでした。";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("versionHistoryForm");
+  if (!form) return;
+
+  const dateInput = document.getElementById("versionHistoryDate");
+  const submitButton = document.getElementById("versionHistorySubmit");
+  const status = document.getElementById("versionHistoryStatus");
+  const today = new Date();
+  const localDate = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0")
+  ].join("-");
+  dateInput.value = localDate;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+
+    const entry = {
+      version: document.getElementById("versionHistoryVersion").value.trim(),
+      date: dateInput.value,
+      description: document.getElementById("versionHistoryDescription").value.trim()
+    };
+
+    submitButton.disabled = true;
+    status.textContent = "履歴を保存しています。";
+
+    try {
+      await requestVersionHistory("add", { entry });
+      form.reset();
+      dateInput.value = localDate;
+      await loadVersionHistory();
+      status.textContent = "バージョン履歴を追加しました。";
+    } catch (error) {
+      console.error("バージョン履歴の追加に失敗しました。", error);
+      status.textContent = error.message || "バージョン履歴を保存できませんでした。";
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+});
 
 // ===== 建物完成までの歩み =====
 
@@ -2232,7 +2365,58 @@ function renderRecruitStatusTables(buildingName) {
 
   renderRecruitStatusTable(`${prefix}-housing-table`, housingRows);
   renderRecruitStatusTable(`${prefix}-parking-table`, parkingRows);
+  requestAnimationFrame(() => syncParkingTableToHousing(prefix));
 }
+
+function syncParkingTableToHousing(prefix) {
+  const housingTable = document
+    .getElementById(`${prefix}-housing-table`)
+    ?.closest(".status-table");
+  const parkingTable = document
+    .getElementById(`${prefix}-parking-table`)
+    ?.closest(".status-table");
+
+  if (!housingTable || !parkingTable) return;
+
+  const colgroup = Array.from(parkingTable.children).find(
+    (child) => child.tagName === "COLGROUP"
+  );
+
+  if (window.matchMedia("(max-width: 768px)").matches) {
+    if (colgroup?.dataset.housingWidthSync === "true") colgroup.remove();
+    parkingTable.style.removeProperty("table-layout");
+    return;
+  }
+
+  const housingHeaders = Array.from(housingTable.querySelectorAll("thead th"));
+  const columnWidths = housingHeaders.map(
+    (header) => header.getBoundingClientRect().width
+  );
+  const totalWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+
+  if (!totalWidth || columnWidths.some((width) => width <= 0)) return;
+
+  let syncedColgroup = colgroup;
+  if (!syncedColgroup || syncedColgroup.dataset.housingWidthSync !== "true") {
+    syncedColgroup = document.createElement("colgroup");
+    syncedColgroup.dataset.housingWidthSync = "true";
+    parkingTable.insertBefore(syncedColgroup, parkingTable.firstElementChild);
+  }
+
+  syncedColgroup.replaceChildren(
+    ...columnWidths.map((width) => {
+      const column = document.createElement("col");
+      column.style.width = `${(width / totalWidth) * 100}%`;
+      return column;
+    })
+  );
+  parkingTable.style.tableLayout = "fixed";
+}
+
+window.addEventListener("resize", () => {
+  syncParkingTableToHousing("komatsu");
+  syncParkingTableToHousing("building");
+});
 
 function renderRecruitStatusTable(tbodyId, rows) {
   const tbody = document.getElementById(tbodyId);
@@ -2561,6 +2745,11 @@ function applyFontSize(size) {
     const active = button.dataset.fontSize === validSize;
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+
+  requestAnimationFrame(() => {
+    syncParkingTableToHousing("komatsu");
+    syncParkingTableToHousing("building");
   });
 
   return validSize;
