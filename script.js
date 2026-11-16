@@ -959,9 +959,15 @@ openDocumentMenu('${name}');">
 
 function showPage(pageId) {
   const overlay = document.getElementById("loadingOverlay");
+  const loadingText = overlay?.querySelector(".loading-text");
+  const defaultLoadingText = loadingText?.textContent;
+  if (pageId === "versionHistory" && loadingText) {
+    loadingText.textContent =
+      "バージョン履歴を読み込んでいます。しばらくお待ちください。";
+  }
   if (overlay) overlay.style.display = "flex";
 
-  setTimeout(() => {
+  setTimeout(async () => {
     try {
       hideAllPages();
 
@@ -981,7 +987,7 @@ function showPage(pageId) {
       }
 
       if (pageId === "versionHistory") {
-        loadVersionHistory();
+        await loadVersionHistory();
       }
 
       if (pageId === "paymentPage") {
@@ -1008,11 +1014,14 @@ function showPage(pageId) {
     } finally {
       // どんな場合でも必ずローディング画面を閉じる
       if (overlay) overlay.style.display = "none";
+      if (loadingText && defaultLoadingText !== undefined) {
+        loadingText.textContent = defaultLoadingText;
+      }
     }
   }, 500);
 }
 
-async function requestVersionHistory(action, data = {}) {
+async function requestVersionHistory(action) {
   if (!VERSION_HISTORY_API_URL) {
     throw new Error("バージョン履歴APIのURLがまだ設定されていません。");
   }
@@ -1025,10 +1034,18 @@ async function requestVersionHistory(action, data = {}) {
   const response = await fetch(VERSION_HISTORY_API_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action, idToken, ...data }),
+    body: JSON.stringify({ action, idToken }),
     cache: "no-store"
   });
-  const result = await response.json();
+  const responseText = await response.text();
+  let result;
+  try {
+    result = JSON.parse(responseText);
+  } catch {
+    throw new Error(
+      `バージョン履歴APIがJSON以外の応答を返しました（HTTP ${response.status}）。`
+    );
+  }
 
   if (!response.ok || !result || result.ok !== true) {
     throw new Error(result?.message || "バージョン履歴APIとの通信に失敗しました。");
@@ -1064,8 +1081,7 @@ function createVersionHistoryEntry(entry) {
 async function loadVersionHistory() {
   const status = document.getElementById("versionHistoryStatus");
   const list = document.getElementById("versionHistoryList");
-  const form = document.getElementById("versionHistoryForm");
-  if (!status || !list || !form) return;
+  if (!status || !list) return;
 
   status.textContent = "バージョン履歴を読み込んでいます。";
   list.replaceChildren();
@@ -1076,7 +1092,6 @@ async function loadVersionHistory() {
       throw new Error("APIから正しい履歴データが返されませんでした。");
     }
 
-    form.hidden = result.canAdd !== true;
     result.entries.forEach((entry) => {
       list.appendChild(createVersionHistoryEntry(entry));
     });
@@ -1084,59 +1099,13 @@ async function loadVersionHistory() {
     if (result.entries.length === 0) {
       status.textContent = "バージョン履歴はまだありません。";
     } else {
-      status.textContent = result.canAdd
-        ? "履歴を新しい順に表示しています。"
-        : "履歴を新しい順に表示しています。追加は管理者のみ行えます。";
+      status.textContent = "履歴を新しい順に表示しています。";
     }
   } catch (error) {
     console.error("バージョン履歴の読み込みに失敗しました。", error);
-    form.hidden = true;
     status.textContent = error.message || "バージョン履歴を読み込めませんでした。";
   }
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("versionHistoryForm");
-  if (!form) return;
-
-  const dateInput = document.getElementById("versionHistoryDate");
-  const submitButton = document.getElementById("versionHistorySubmit");
-  const status = document.getElementById("versionHistoryStatus");
-  const today = new Date();
-  const localDate = [
-    today.getFullYear(),
-    String(today.getMonth() + 1).padStart(2, "0"),
-    String(today.getDate()).padStart(2, "0")
-  ].join("-");
-  dateInput.value = localDate;
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (!form.reportValidity()) return;
-
-    const entry = {
-      version: document.getElementById("versionHistoryVersion").value.trim(),
-      date: dateInput.value,
-      description: document.getElementById("versionHistoryDescription").value.trim()
-    };
-
-    submitButton.disabled = true;
-    status.textContent = "履歴を保存しています。";
-
-    try {
-      await requestVersionHistory("add", { entry });
-      form.reset();
-      dateInput.value = localDate;
-      await loadVersionHistory();
-      status.textContent = "バージョン履歴を追加しました。";
-    } catch (error) {
-      console.error("バージョン履歴の追加に失敗しました。", error);
-      status.textContent = error.message || "バージョン履歴を保存できませんでした。";
-    } finally {
-      submitButton.disabled = false;
-    }
-  });
-});
 
 // ===== 建物完成までの歩み =====
 
