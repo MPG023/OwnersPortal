@@ -147,7 +147,7 @@ const VERSION_HISTORY_API_URL =
 const INSPECTION_REPORT_API_URL = "";
 
 // Deploy Inquiry.gs as a web app and paste its URL here.
-const INQUIRY_API_URL = "https://script.google.com/macros/s/AKfycbxYgwMrupg8auqVVugdepmoOsAZFoJ5KFG30IJxGyhwWbwzarBoqJ9eOBUBV_ZivCVwbQ/exec";
+const INQUIRY_API_URL = "";
 
 // type: "notices" / "recruit" / "documents" / "repair" / "incomeStatement" /
 //       "constructionStatus"
@@ -1110,36 +1110,115 @@ function renderInquiryHistory() {
   }
 
   status.textContent = "";
-  inquiries.forEach((inquiry) => {
+  inquiries.forEach((inquiry, index) => {
     const article = document.createElement("article");
     article.className = "inquiry-history-entry";
 
-    const heading = document.createElement("h4");
-    heading.textContent = inquiry.subject || "（件名なし）";
+    const summary = document.createElement("button");
+    summary.type = "button";
+    summary.className = "inquiry-history-summary";
+    summary.setAttribute("aria-expanded", "false");
 
-    const metadata = document.createElement("div");
-    metadata.className = "inquiry-history-entry-meta";
-    [inquiry.date, inquiry.category, inquiry.status].filter(Boolean).forEach((value) => {
+    const summaryContent = document.createElement("span");
+    summaryContent.className = "inquiry-history-summary-content";
+
+    const titleRow = document.createElement("span");
+    titleRow.className = "inquiry-history-title-row";
+
+    const statusBadge = document.createElement("span");
+    statusBadge.className = "inquiry-history-status-badge";
+    statusBadge.textContent = inquiry.status || "回答待ち";
+    statusBadge.dataset.status = inquiry.status === "回答あり" ? "answered" : "waiting";
+
+    const subject = document.createElement("span");
+    subject.className = "inquiry-history-subject";
+    subject.textContent = inquiry.subject || "（件名なし）";
+    titleRow.append(statusBadge, subject);
+
+    const metadata = document.createElement("span");
+    metadata.className = "inquiry-history-summary-meta";
+
+    [
+      ["カテゴリ", inquiry.category],
+      ["お問い合わせ日", inquiry.date]
+    ].forEach(([label, value]) => {
+      if (!value) return;
+      const metaItem = document.createElement("span");
+      metaItem.className = "inquiry-history-meta-item";
+
+      const metaLabel = document.createElement("span");
+      metaLabel.className = "inquiry-history-meta-label";
+      metaLabel.textContent = label;
+
       const item = document.createElement("span");
-      item.textContent = value;
-      metadata.appendChild(item);
+      item.className = "inquiry-history-meta-value";
+      if (label === "お問い合わせ日") {
+        const dateMatch = String(value).match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+        item.textContent = dateMatch
+          ? `${dateMatch[1]}/${dateMatch[2].padStart(2, "0")}/${dateMatch[3].padStart(2, "0")}`
+          : value;
+      } else {
+        item.textContent = value;
+      }
+
+      metaItem.append(metaLabel, item);
+      metadata.appendChild(metaItem);
     });
 
+    summaryContent.append(titleRow, metadata);
+
+    const chevron = document.createElement("span");
+    chevron.className = "inquiry-history-chevron";
+    chevron.setAttribute("aria-hidden", "true");
+
+    const details = document.createElement("div");
+    details.className = "inquiry-history-details";
+    details.id = `inquiry-history-details-${index}`;
+    details.hidden = true;
+    summary.setAttribute("aria-controls", details.id);
+    summary.append(summaryContent, chevron);
+
     const message = document.createElement("p");
+    message.className = "inquiry-history-message";
     message.textContent = inquiry.message || "";
-    article.append(heading, metadata, message);
+    const messageSection = document.createElement("div");
+    messageSection.className = "inquiry-history-detail-section";
+    const messageLabel = document.createElement("strong");
+    messageLabel.textContent = "お問い合わせ内容";
+    messageSection.append(messageLabel, message);
+    details.appendChild(messageSection);
 
     if (inquiry.reply) {
       const answer = document.createElement("div");
       answer.className = "inquiry-answer";
       const answerLabel = document.createElement("strong");
-      answerLabel.textContent = "回答";
+      answerLabel.textContent = "管理者からの回答";
       const answerText = document.createElement("p");
       answerText.textContent = inquiry.reply;
-      answer.append(answerLabel, answerText);
-      article.appendChild(answer);
+
+      if (inquiry.repliedAt) {
+        const answerDate = document.createElement("span");
+        answerDate.className = "inquiry-answer-date";
+        const dateMatch = String(inquiry.repliedAt).match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+        const formattedDate = dateMatch
+          ? `${dateMatch[1]}/${dateMatch[2].padStart(2, "0")}/${dateMatch[3].padStart(2, "0")}`
+          : inquiry.repliedAt;
+        answerDate.textContent = `回答日：${formattedDate}`;
+        answer.append(answerLabel, answerDate, answerText);
+      } else {
+        answer.append(answerLabel, answerText);
+      }
+
+      details.appendChild(answer);
     }
 
+    summary.addEventListener("click", () => {
+      const expanded = summary.getAttribute("aria-expanded") === "true";
+      summary.setAttribute("aria-expanded", String(!expanded));
+      details.hidden = expanded;
+    });
+
+    article.append(summary, details);
     list.appendChild(article);
   });
 }
