@@ -134,8 +134,8 @@ async function checkMaintenanceMode() {
 checkMaintenanceMode();
 
 // ===== 認証付きデータ取得API（Google Apps Script） =====
-// お知らせ・募集状況・書類・修繕状況・年間収支・点検レポートは、すべてこの
-// 認証付きAPI経由で取得する（ログインしていない人はデータを取得できない）。
+// お知らせ・募集状況・書類・修繕状況・年間収支はこのAPIから取得します。
+// 建物定期報告書は専用APIから取得します。
 const SECURE_API_URL =
   "https://script.google.com/macros/s/AKfycbxSnwnJiR_dtybKS40qVqV3sG7IfN_XDqnbofAkLv2ikwzs2w1LNhbVYRnJj88pFsAhoA/exec";
 
@@ -143,9 +143,13 @@ const SECURE_API_URL =
 const VERSION_HISTORY_API_URL =
   "https://script.google.com/macros/s/AKfycbx6k2IqTHKLUzTq2EXNL2ROOrv941mnfxUXDjwUlEA4qPF7lCpyNrhArM537jBqzsYa/exec";
 
+// Deploy InspectionReport.gs as a web app and paste its URL here.
+const INSPECTION_REPORT_API_URL = "";
+
+// Deploy Inquiry.gs as a web app and paste its URL here.
+const INQUIRY_API_URL = "";
+
 // type: "notices" / "recruit" / "documents" / "repair" / "incomeStatement" /
-//       "inspectionBasic" / "inspectionCheck" / "inspectionPhoto" /
-//       "inspectionSectionNote" / "inspectionSummary" / "inspectionOccupancy" /
 //       "constructionStatus"
 
 // ログイン直後などに複数種類のデータをまとめて1回のリクエストで取得しておき、
@@ -692,12 +696,6 @@ const PRELOAD_TYPES = [
   "documents",
   "repair",
   "incomeStatement",
-  "inspectionBasic",
-  "inspectionCheck",
-  "inspectionPhoto",
-  "inspectionSectionNote",
-  "inspectionSummary",
-  "inspectionOccupancy",
   "constructionStatus"
 ];
 
@@ -961,9 +959,14 @@ function showPage(pageId) {
   const overlay = document.getElementById("loadingOverlay");
   const loadingText = overlay?.querySelector(".loading-text");
   const defaultLoadingText = loadingText?.textContent;
-  if (pageId === "versionHistory" && loadingText) {
-    loadingText.textContent =
-      "バージョン履歴を読み込んでいます。しばらくお待ちください。";
+  if (loadingText) {
+    if (pageId === "versionHistory") {
+      loadingText.textContent =
+        "バージョン履歴を読み込んでいます。しばらくお待ちください。";
+    } else if (pageId === "newInquiry") {
+      loadingText.textContent =
+        "新規お問い合わせを読み込んでいます。しばらくお待ちください。";
+    }
   }
   if (overlay) overlay.style.display = "flex";
 
@@ -988,6 +991,10 @@ function showPage(pageId) {
 
       if (pageId === "versionHistory") {
         await loadVersionHistory();
+      }
+
+      if (pageId === "inquiry") {
+        await loadInquiryHistory();
       }
 
       if (pageId === "paymentPage") {
@@ -1019,6 +1026,161 @@ function showPage(pageId) {
       }
     }
   }, 500);
+}
+
+async function requestInquiryApi(action, values = {}) {
+  if (!INQUIRY_API_URL) {
+    throw new Error("お問い合わせAPIのURLをscript.jsに設定してください。");
+  }
+
+  const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+  if (!idToken) {
+    throw new Error("ログインしていません。再度ログインしてください。");
+  }
+
+  const response = await fetch(INQUIRY_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action, idToken, ...values }),
+    cache: "no-store"
+  });
+  const responseText = await response.text();
+  let result;
+
+  try {
+    result = JSON.parse(responseText);
+  } catch {
+    throw new Error(
+      `お問い合わせAPIがJSON以外の応答を返しました（HTTP ${response.status}）。`
+    );
+  }
+
+  if (!response.ok || !result || result.ok !== true) {
+    throw new Error(result?.message || "お問い合わせAPIとの通信に失敗しました。");
+  }
+
+  return result;
+}
+
+let inquiryHistory = [];
+
+async function loadInquiryHistory() {
+  const status = document.getElementById("inquiryHistoryStatus");
+  const list = document.getElementById("inquiryHistoryList");
+  if (!status || !list) return;
+
+  status.textContent = "お問い合わせ履歴を読み込んでいます。";
+  list.replaceChildren();
+
+  try {
+    const result = await requestInquiryApi("list");
+    if (!Array.isArray(result.inquiries)) {
+      throw new Error("お問い合わせAPIから正しい履歴データが返されませんでした。");
+    }
+
+    inquiryHistory = result.inquiries;
+    renderInquiryHistory();
+  } catch (error) {
+    console.error("お問い合わせ履歴の読み込みに失敗しました。", error);
+    inquiryHistory = [];
+    status.textContent =
+      error.message || "お問い合わせ履歴を読み込めませんでした。";
+  }
+}
+
+function renderInquiryHistory() {
+  const status = document.getElementById("inquiryHistoryStatus");
+  const list = document.getElementById("inquiryHistoryList");
+  const filter = document.getElementById("inquiryStatusFilter");
+  if (!status || !list || !filter) return;
+
+  list.replaceChildren();
+  const selectedStatus = filter.value;
+  const inquiries = inquiryHistory.filter((inquiry) => {
+    if (selectedStatus === "answered") return inquiry.status === "回答あり";
+    if (selectedStatus === "waiting") return inquiry.status === "回答待ち";
+    return true;
+  });
+
+  if (inquiries.length === 0) {
+    status.textContent = inquiryHistory.length === 0
+      ? "お問い合わせ履歴はありません。"
+      : "選択した回答状況のお問い合わせはありません。";
+    return;
+  }
+
+  status.textContent = "";
+  inquiries.forEach((inquiry) => {
+    const article = document.createElement("article");
+    article.className = "inquiry-history-entry";
+
+    const heading = document.createElement("h4");
+    heading.textContent = inquiry.subject || "（件名なし）";
+
+    const metadata = document.createElement("div");
+    metadata.className = "inquiry-history-entry-meta";
+    [inquiry.date, inquiry.category, inquiry.status].filter(Boolean).forEach((value) => {
+      const item = document.createElement("span");
+      item.textContent = value;
+      metadata.appendChild(item);
+    });
+
+    const message = document.createElement("p");
+    message.textContent = inquiry.message || "";
+    article.append(heading, metadata, message);
+
+    if (inquiry.reply) {
+      const answer = document.createElement("div");
+      answer.className = "inquiry-answer";
+      const answerLabel = document.createElement("strong");
+      answerLabel.textContent = "回答";
+      const answerText = document.createElement("p");
+      answerText.textContent = inquiry.reply;
+      answer.append(answerLabel, answerText);
+      article.appendChild(answer);
+    }
+
+    list.appendChild(article);
+  });
+}
+
+async function submitInquiry(event) {
+  event.preventDefault();
+  const form = document.getElementById("inquiryForm");
+  const status = document.getElementById("inquiryFormStatus");
+  const submitButton = document.getElementById("inquirySubmitButton");
+  if (!form || !status || !submitButton) return;
+
+  const formData = new FormData(form);
+  const subject = String(formData.get("subject") || "").trim();
+  const message = String(formData.get("message") || "").trim();
+  const category = String(formData.get("category") || "").trim();
+
+  if (!category || !subject || !message) {
+    status.textContent = "カテゴリ、件名、お問い合わせ内容を入力してください。";
+    return;
+  }
+
+  submitButton.disabled = true;
+  status.textContent = "お問い合わせを送信しています。";
+
+  try {
+    const result = await requestInquiryApi("submit", {
+      category,
+      subject,
+      message
+    });
+    form.reset();
+    status.textContent = result.notificationSent === true
+      ? "お問い合わせを送信し、管理者へ通知しました。"
+      : result.message ||
+        "お問い合わせは受け付けましたが、管理者へのメール通知を確認できませんでした。";
+  } catch (error) {
+    console.error("お問い合わせの送信に失敗しました。", error);
+    status.textContent = error.message || "お問い合わせを送信できませんでした。";
+  } finally {
+    submitButton.disabled = false;
+  }
 }
 
 async function requestVersionHistory(action) {
@@ -1109,48 +1271,91 @@ async function loadVersionHistory() {
 
 // ===== 建物完成までの歩み =====
 
-// 画像一覧
-const historyImages = [];
-
-for (let i = 113; i <= 130; i++) {
-  historyImages.push(
-    `https://mpg023.github.io/OwnersPortal/images/construction/IMG_0${i}.jpg`
-  );
-}
-
+let historyImages = [];
 let historyIndex = 0;
 let slideTimer = null;
 
-// 初期表示
-function loadHistory() {
+async function loadHistory(buildingName = currentPhotoBuilding) {
   const main = document.getElementById("mainHistoryImage");
   const list = document.getElementById("historyList");
 
   if (!main || !list) return;
 
-  historyIndex = 0;
-  main.src = historyImages[0];
+  if (slideTimer) {
+    clearInterval(slideTimer);
+    slideTimer = null;
+  }
 
-  list.innerHTML = "";
+  const title = document.getElementById("buildingHistoryTitle");
+  if (title) {
+    title.textContent = buildingName
+      ? `${buildingName} 建物完成までの歩み`
+      : "建物完成までの歩み";
+  }
+
+  list.replaceChildren();
+  main.removeAttribute("src");
+  await ensureConstructionStatusLoaded();
+
+  if (!constructionDataLoaded) {
+    list.textContent = "写真を読み込めませんでした。時間をおいて再度お試しください。";
+    historyImages = [];
+    return;
+  }
+
+  historyImages = constructionData
+    .filter(
+      (row) =>
+        row[0] === buildingName &&
+        row[4] !== "スケジュール" &&
+        typeof row[5] === "string" &&
+        row[5].trim()
+    )
+    .sort((a, b) => (a[2] < b[2] ? 1 : a[2] > b[2] ? -1 : 0))
+    .map((row) => toEmbeddablePdfImageUrl(row[5].trim()));
+  historyIndex = 0;
+
+  if (historyImages.length === 0) {
+    list.textContent = "この建物の写真はまだ登録されていません。";
+    return;
+  }
 
   historyImages.forEach((img, index) => {
-    list.innerHTML += `
-      <div class="history-thumb" onclick="showHistory(${index})">
-        <div style="width:30px;text-align:center;">${index + 1}</div>
-        <img src="${img}" alt="工事写真 ${
-      index + 1
-    }" onerror="this.style.display='none'">
-      </div>
-    `;
+    const thumb = document.createElement("div");
+    thumb.className = "history-thumb";
+    thumb.addEventListener("click", () => showHistory(index));
+
+    const number = document.createElement("div");
+    number.style.width = "30px";
+    number.style.textAlign = "center";
+    number.textContent = String(index + 1);
+
+    const image = document.createElement("img");
+    image.src = img;
+    image.alt = `工事写真 ${index + 1}`;
+    image.onerror = () => {
+      image.style.display = "none";
+    };
+
+    thumb.append(number, image);
+    list.appendChild(thumb);
   });
+
+  showHistory(0);
 }
 
 function showHistory(index) {
+  if (historyImages.length === 0) return;
   historyIndex = index;
-  document.getElementById("mainHistoryImage").src = historyImages[index];
+  const main = document.getElementById("mainHistoryImage");
+  if (main) {
+    main.style.display = "";
+    main.src = historyImages[index];
+  }
 }
 
 function nextHistory() {
+  if (historyImages.length === 0) return;
   historyIndex++;
 
   if (historyIndex >= historyImages.length) {
@@ -1161,6 +1366,7 @@ function nextHistory() {
 }
 
 function prevHistory() {
+  if (historyImages.length === 0) return;
   historyIndex--;
 
   if (historyIndex < 0) {
@@ -1174,13 +1380,15 @@ function openHistoryImage() {
   const modal = document.getElementById("imageModal");
   const modalImg = document.getElementById("modalImage");
 
-  if (!modal || !modalImg) return;
+  if (!modal || !modalImg || historyImages.length === 0) return;
 
   modal.style.display = "block";
   modalImg.src = historyImages[historyIndex];
 }
 
 function toggleSlide() {
+  if (historyImages.length === 0) return;
+
   if (slideTimer) {
     clearInterval(slideTimer);
     slideTimer = null;
@@ -1871,20 +2079,8 @@ function closePhotoBuildingMenu() {
 // CSV形式で発行したURLを貼り付けてください。すべてのシートに「建物名」列を用意し、
 // 建物ごとにデータを絞り込んで表示します。
 //
-// ・INSPECTION_BASIC_CSV_URL     基本情報：建物名,オーナー様,管理営業所,担当者,建物点検日,建物CD,建物完成日,契約形態,建物写真URL,PDFのリンク
-//     PDFのリンクは、建物定期報告書のPDFをGoogleドライブ等に保存し、「リンクを知っている全員が閲覧可」の
-//     共有リンクを貼り付けてください。「PDFダウンロード」ボタンから、そのPDFがブラウザの標準ビューアで開きます。
-// ・INSPECTION_CHECK_CSV_URL     点検項目：建物名,セクション,点検項目,判定,コメント
-//     セクションは「外壁・屋根・基礎」「共用部点検」「設備点検」のいずれかを入力してください。
-// ・INSPECTION_PHOTO_CSV_URL     点検写真：建物名,セクション,キャプション,コメント,写真URL
-//     セクションは上の3つに加えて「点検写真」（点検2タブの写真ギャラリー用）も使えます。
-//     小さい写真カードにはキャプションのみ、写真ギャラリーはキャプション＋コメントを表示します。
-// ・INSPECTION_SECTION_NOTE_CSV_URL  セクション所見：建物名,セクション,所見コメント
-//     セクションは「共用部点検」「設備点検」のみ対応（外壁・屋根・基礎には所見欄がありません）。
-// ・INSPECTION_SUMMARY_CSV_URL   総合判定：建物名,建物全体判定,緊急対応,推奨修繕,次回点検,点検担当コメント,オーナー様へのご案内
-// ・INSPECTION_OCCUPANCY_CSV_URL ご入居状況：建物名,部屋No,契約番号,入居者名,家賃,駐車場,入居日,契約満了日,備考
-
 let inspectionDataLoaded = false;
+let inspectionDataLoading = null;
 
 let inspectionData = {
   basic: [],
@@ -1892,40 +2088,79 @@ let inspectionData = {
   photo: [],
   sectionNote: [],
   summary: [],
-  occupancy: []
+  occupancy: [],
+  cleaning: [],
+  contract: [],
+  reception: [],
+  meeting: []
 };
-
-async function fetchInspectionCSV(type) {
-  try {
-    const text = await fetchSecureCsv(type);
-    return parseCSV(text).slice(1); // ヘッダー行を除く
-  } catch (e) {
-    console.error(e);
-    return [];
-  }
-}
 
 async function loadInspectionData() {
   if (inspectionDataLoaded) return;
+  if (inspectionDataLoading) return inspectionDataLoading;
 
-  const [
-    basic,
-    check,
-    photo,
-    sectionNote,
-    summary,
-    occupancy
-  ] = await Promise.all([
-    fetchInspectionCSV("inspectionBasic"),
-    fetchInspectionCSV("inspectionCheck"),
-    fetchInspectionCSV("inspectionPhoto"),
-    fetchInspectionCSV("inspectionSectionNote"),
-    fetchInspectionCSV("inspectionSummary"),
-    fetchInspectionCSV("inspectionOccupancy")
-  ]);
+  inspectionDataLoading = (async function () {
+    if (!INSPECTION_REPORT_API_URL) {
+      throw new Error("建物定期報告書APIのURLをscript.jsに設定してください。");
+    }
 
-  inspectionData = { basic, check, photo, sectionNote, summary, occupancy };
-  inspectionDataLoaded = true;
+    const idToken = auth.currentUser
+      ? await auth.currentUser.getIdToken()
+      : null;
+    if (!idToken) {
+      throw new Error("ログインしていません。再度ログインしてください。");
+    }
+
+    const response = await fetch(INSPECTION_REPORT_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "list", idToken }),
+      cache: "no-store"
+    });
+    const responseText = await response.text();
+    let result;
+
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      throw new Error(
+        `建物定期報告書APIがJSON以外の応答を返しました（HTTP ${response.status}）。`
+      );
+    }
+
+    if (!response.ok || !result || result.ok !== true || !result.data) {
+      throw new Error(
+        result?.message || "建物定期報告書を取得できませんでした。"
+      );
+    }
+
+    const requiredData = [
+      "basic",
+      "check",
+      "photo",
+      "sectionNote",
+      "summary",
+      "occupancy",
+      "cleaning",
+      "contract",
+      "reception",
+      "meeting"
+    ];
+    requiredData.forEach((key) => {
+      if (!Array.isArray(result.data[key])) {
+        throw new Error(`建物定期報告書APIの「${key}」データがありません。`);
+      }
+    });
+
+    inspectionData = result.data;
+    inspectionDataLoaded = true;
+  })();
+
+  try {
+    await inspectionDataLoading;
+  } finally {
+    inspectionDataLoading = null;
+  }
 }
 
 function inspectionJudgeClass(mark) {
@@ -1950,23 +2185,39 @@ function setInspectionValue(id, value) {
   if (el) el.value = value || "";
 }
 
+function inspectionBuildingMatches(row, buildingName) {
+  return String(row[0] || "").trim() === String(buildingName || "").trim();
+}
+
 async function showInspectionFor(buildingName) {
   const content = document.getElementById("inspectionContent");
   const placeholder = document.getElementById("inspectionPlaceholder");
   if (!content || !placeholder) return;
 
-  await loadInspectionData();
+  placeholder.textContent = "建物定期報告書を読み込んでいます。";
+  placeholder.style.display = "block";
+  content.style.display = "none";
 
-  const basicRow = inspectionData.basic.find((c) => c[0] === buildingName);
-
-  if (!basicRow) {
-    content.style.display = "none";
-    placeholder.style.display = "block";
+  try {
+    await loadInspectionData();
+  } catch (error) {
+    console.error("建物定期報告書の読み込みに失敗しました。", error);
+    placeholder.textContent =
+      error.message || "建物定期報告書を読み込めませんでした。";
     return;
   }
 
-  content.style.display = "block";
+  const basicRow = inspectionData.basic.find((row) =>
+    inspectionBuildingMatches(row, buildingName)
+  );
+
+  if (!basicRow) {
+    placeholder.textContent = "この建物の報告書データがありません。";
+    return;
+  }
+
   placeholder.style.display = "none";
+  content.style.display = "block";
 
   renderInspectionReport(buildingName, basicRow);
 }
@@ -1996,9 +2247,19 @@ function renderInspectionReport(buildingName, basicRow) {
   setInspectionText("reportBuildingCode", buildingCode);
   setInspectionText("reportCompletionDate", completionDate);
   setInspectionText("reportContract", contract);
+  setInspectionText("inspectionSignedStaff", staff);
+  setInspectionText("inspectionSignedDate", checkDate);
 
   const photoEl = document.getElementById("inspectionMainPhoto");
-  if (photoEl && photoUrl) photoEl.src = photoUrl;
+  if (photoEl) {
+    if (photoUrl && photoUrl.trim()) {
+      photoEl.style.display = "";
+      photoEl.src = photoUrl.trim();
+    } else {
+      photoEl.removeAttribute("src");
+      photoEl.style.display = "none";
+    }
+  }
 
   // 「PDFダウンロード」ボタン：ブラウザ標準のPDFビューアでそのまま開けるよう、
   // アプリ内モーダル（iframe）は使わず、直接PDFのURLへ新規タブで飛ばす
@@ -2033,46 +2294,82 @@ function renderInspectionReport(buildingName, basicRow) {
   // セクション所見（共用部点検／設備点検）
 
   const commonNote = inspectionData.sectionNote.find(
-    (c) => c[0] === buildingName && c[1] === "共用部点検"
+    (row) =>
+      inspectionBuildingMatches(row, buildingName) &&
+      row[1] === "共用部点検"
   );
   setInspectionValue("inspectionComment1", commonNote ? commonNote[2] : "");
 
   const facilityNote = inspectionData.sectionNote.find(
-    (c) => c[0] === buildingName && c[1] === "設備点検"
+    (row) =>
+      inspectionBuildingMatches(row, buildingName) &&
+      row[1] === "設備点検"
   );
   setInspectionValue("inspectionComment2", facilityNote ? facilityNote[2] : "");
 
   // 総合判定（点検2タブ）
 
-  const summaryRow = inspectionData.summary.find((c) => c[0] === buildingName);
+  const summaryRow = inspectionData.summary.find((row) =>
+    inspectionBuildingMatches(row, buildingName)
+  );
 
-  if (summaryRow) {
-    const [
-      ,
-      rank,
-      urgent,
-      recommend,
-      nextDate,
-      staffComment,
-      ownerComment
-    ] = summaryRow;
+  const [
+    ,
+    rank,
+    urgent,
+    recommend,
+    nextDate,
+    staffComment,
+    ownerComment
+  ] = summaryRow || [];
 
-    const rankEl = document.getElementById("summaryRank");
-    if (rankEl) {
-      rankEl.textContent = rank || "";
-      rankEl.className = inspectionRankClass(rank);
-    }
-
-    setInspectionText("summaryUrgent", urgent);
-    setInspectionText("summaryRecommend", recommend);
-    setInspectionText("summaryNextDate", nextDate);
-    setInspectionValue("staffComment", staffComment);
-    setInspectionValue("ownerComment", ownerComment);
+  const rankClass = inspectionRankClass(rank);
+  const rankEl = document.getElementById("summaryRank");
+  if (rankEl) {
+    rankEl.textContent = rank || "";
+    rankEl.className = rank ? rankClass : "";
   }
+  const coverRankEl = document.getElementById("coverSummaryRank");
+  if (coverRankEl) {
+    coverRankEl.textContent = rank || "";
+    coverRankEl.className = rank ? rankClass : "";
+  }
+
+  setInspectionText("coverSummaryText", ownerComment || staffComment);
+  setInspectionText("summaryUrgent", urgent);
+  setInspectionText("summaryRecommend", recommend);
+  setInspectionText("summaryNextDate", nextDate);
+  setInspectionValue("staffComment", staffComment);
+  setInspectionValue("ownerComment", ownerComment);
 
   // ご入居状況
 
   renderInspectionOccupancyTable(buildingName);
+  renderInspectionDataTable(
+    buildingName,
+    "cleaning",
+    "inspectionCleaningBody",
+    [1, 2, 3, 4, 5],
+    6
+  );
+  renderInspectionDataTable(
+    buildingName,
+    "contract",
+    "inspectionContractBody",
+    [1, 2, 3, 4, 5, 6, 7]
+  );
+  renderInspectionDataTable(
+    buildingName,
+    "reception",
+    "inspectionReceptionBody",
+    [1, 2, 3, 4, 5, 6]
+  );
+  renderInspectionDataTable(
+    buildingName,
+    "meeting",
+    "inspectionMeetingBody",
+    [1, 2, 3, 4, 5, 6]
+  );
 }
 
 function renderInspectionCheckTable(buildingName, sectionName, tbodyId) {
@@ -2080,7 +2377,9 @@ function renderInspectionCheckTable(buildingName, sectionName, tbodyId) {
   if (!tbody) return;
 
   const rows = inspectionData.check.filter(
-    (c) => c[0] === buildingName && c[1] === sectionName
+    (row) =>
+      inspectionBuildingMatches(row, buildingName) &&
+      row[1] === sectionName
   );
 
   tbody.innerHTML = "";
@@ -2096,13 +2395,16 @@ function renderInspectionCheckTable(buildingName, sectionName, tbodyId) {
     const mark = c[3] || "";
     const comment = c[4] || "";
 
-    tbody.innerHTML += `
-    <tr>
-      <td>${item}</td>
-      <td class="${inspectionJudgeClass(mark)}">${mark}</td>
-      <td>${comment}</td>
-    </tr>
-    `;
+    const row = document.createElement("tr");
+    const itemCell = document.createElement("td");
+    itemCell.textContent = item;
+    const markCell = document.createElement("td");
+    markCell.className = inspectionJudgeClass(mark);
+    markCell.textContent = mark;
+    const commentCell = document.createElement("td");
+    commentCell.textContent = comment;
+    row.append(itemCell, markCell, commentCell);
+    tbody.appendChild(row);
   });
 }
 
@@ -2111,7 +2413,9 @@ function renderInspectionPhotoGrid(buildingName, sectionName, containerId) {
   if (!container) return;
 
   const rows = inspectionData.photo.filter(
-    (c) => c[0] === buildingName && c[1] === sectionName
+    (row) =>
+      inspectionBuildingMatches(row, buildingName) &&
+      row[1] === sectionName
   );
 
   container.innerHTML = "";
@@ -2120,12 +2424,16 @@ function renderInspectionPhotoGrid(buildingName, sectionName, containerId) {
     const caption = c[2] || "";
     const photoUrl = c[4] || "";
 
-    container.innerHTML += `
-    <div class="inspection-photo-card">
-      <img src="${photoUrl}" onerror="this.style.display='none'">
-      <div>${caption}</div>
-    </div>
-    `;
+    const card = document.createElement("div");
+    card.className = "inspection-photo-card";
+    const image = document.createElement("img");
+    image.src = photoUrl;
+    image.alt = caption;
+    image.onerror = () => { image.style.display = "none"; };
+    const captionEl = document.createElement("div");
+    captionEl.textContent = caption;
+    card.append(image, captionEl);
+    container.appendChild(card);
   });
 }
 
@@ -2134,7 +2442,9 @@ function renderInspectionGallery(buildingName, sectionName, containerId) {
   if (!container) return;
 
   const rows = inspectionData.photo.filter(
-    (c) => c[0] === buildingName && c[1] === sectionName
+    (row) =>
+      inspectionBuildingMatches(row, buildingName) &&
+      row[1] === sectionName
   );
 
   container.innerHTML = "";
@@ -2144,53 +2454,83 @@ function renderInspectionGallery(buildingName, sectionName, containerId) {
     const comment = c[3] || "";
     const photoUrl = c[4] || "";
 
-    container.innerHTML += `
-    <div class="gallery-item">
-      <img src="${photoUrl}" onclick="openInspectionImage(this.src)" onerror="this.style.display='none'">
-      <div class="gallery-title">${caption}</div>
-      <div class="gallery-comment">${comment}</div>
-    </div>
-    `;
+    const item = document.createElement("div");
+    item.className = "gallery-item";
+    const image = document.createElement("img");
+    image.src = photoUrl;
+    image.alt = caption;
+    image.addEventListener("click", () => openInspectionImage(image.src));
+    image.onerror = () => { image.style.display = "none"; };
+    const title = document.createElement("div");
+    title.className = "gallery-title";
+    title.textContent = caption;
+    const commentEl = document.createElement("div");
+    commentEl.className = "gallery-comment";
+    commentEl.textContent = comment;
+    item.append(image, title, commentEl);
+    container.appendChild(item);
+  });
+}
+
+function renderInspectionDataTable(
+  buildingName,
+  dataKey,
+  tbodyId,
+  columnIndexes,
+  photoColumnIndex = null
+) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+
+  const rows = inspectionData[dataKey].filter((row) =>
+    inspectionBuildingMatches(row, buildingName)
+  );
+  tbody.replaceChildren();
+
+  if (rows.length === 0) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = columnIndexes.length + (photoColumnIndex === null ? 0 : 1);
+    cell.textContent = "該当データがありません";
+    cell.style.textAlign = "center";
+    row.appendChild(cell);
+    tbody.appendChild(row);
+    return;
+  }
+
+  rows.forEach((dataRow) => {
+    const row = document.createElement("tr");
+    columnIndexes.forEach((columnIndex) => {
+      const cell = document.createElement("td");
+      cell.textContent = dataRow[columnIndex] || "";
+      row.appendChild(cell);
+    });
+
+    if (photoColumnIndex !== null) {
+      const cell = document.createElement("td");
+      const photoUrl = dataRow[photoColumnIndex];
+      if (photoUrl) {
+        const link = document.createElement("a");
+        link.href = toEmbeddablePdfImageUrl(photoUrl);
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = "写真を見る";
+        cell.appendChild(link);
+      }
+      row.appendChild(cell);
+    }
+
+    tbody.appendChild(row);
   });
 }
 
 function renderInspectionOccupancyTable(buildingName) {
-  const tbody = document.getElementById("occupancyTableBody");
-  if (!tbody) return;
-
-  const rows = inspectionData.occupancy.filter((c) => c[0] === buildingName);
-
-  tbody.innerHTML = "";
-
-  if (rows.length === 0) {
-    tbody.innerHTML =
-      '<tr><td colspan="8" style="text-align:center">該当データがありません</td></tr>';
-    return;
-  }
-
-  rows.forEach((c) => {
-    const room = c[1] || "";
-    const contractNo = c[2] || "";
-    const tenant = c[3] || "";
-    const rent = c[4] || "";
-    const parking = c[5] || "";
-    const moveIn = c[6] || "";
-    const contractEnd = c[7] || "";
-    const note = c[8] || "";
-
-    tbody.innerHTML += `
-    <tr>
-      <td>${room}</td>
-      <td>${contractNo}</td>
-      <td>${tenant}</td>
-      <td>${rent}</td>
-      <td>${parking}</td>
-      <td>${moveIn}</td>
-      <td>${contractEnd}</td>
-      <td>${note}</td>
-    </tr>
-    `;
-  });
+  renderInspectionDataTable(
+    buildingName,
+    "occupancy",
+    "occupancyTableBody",
+    [1, 2, 3, 4, 5, 6, 7, 8]
+  );
 }
 
 // 建物定期報告書：過去履歴（未実装のため仮の動作）

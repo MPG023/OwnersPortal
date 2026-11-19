@@ -104,6 +104,7 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
       <img src="./images/owner-logo.png" alt="オーナーズポータル" onerror="this.style.display='none'">
     </div>
 
+    <h1 class="login-title">オーナーズポータル</h1>
     <p class="login-subtitle">物件オーナー様専用ログイン</p>
 
     <form id="loginForm" autocomplete="on">
@@ -335,8 +336,7 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
 
 		<img class="slide" src="https://mpg023.github.io/OwnersPortal/images/slider/slide7.JPG" onerror="this.style.display='none'">
     
-        <img class="slide" src="https://mpg023.github.io/OwnersPortal/images/slider/slide8.JPG" onerror="this.style.display='none'">
-     
+  
 
       </div>
 
@@ -347,8 +347,7 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
         <span class="dot"></span>
         <span class="dot"></span>
 		<span class="dot"></span>
-		<span class="dot"></span>
-		<span class="dot"></span>   
+		<span class="dot"></span>  
       </div>
 
     </div>
@@ -404,43 +403,86 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
   </section>
 
  <section id="versionHistory" class="page">
-    <div class="notice-page-title">
-      <span class="material-icons" aria-hidden="true">history</span>
-      <h2>バージョン履歴</h2>
-    </div>
-	 <div class="contract-list-rule" aria-hidden="true"></div>
-　　 <p id="versionHistoryStatus" class="version-history-status" role="status" aria-live="polite">
+   <div class="page-title">
+     <span class="material-icons" aria-hidden="true">history</span>
+     <h2>バージョン履歴</h2>
+   </div>
+
+   <button type="button" class="back-btn" onclick="backHome()">← ホームへ戻る</button>
+
+   <p id="versionHistoryStatus" class="version-history-status" role="status" aria-live="polite">
      バージョン履歴を読み込んでいます。
    </p>
 
    <div id="versionHistoryList" class="version-history-list"></div>
-
-   <form id="versionHistoryForm" class="version-history-form" hidden>
-     <h3>履歴を追加</h3>
-     <label for="versionHistoryVersion">バージョン</label>
-     <input id="versionHistoryVersion" name="version" type="text" maxlength="40" placeholder="例：1.2.0" required>
-
-     <label for="versionHistoryDate">日付</label>
-     <input id="versionHistoryDate" name="date" type="date" required>
-
-     <label for="versionHistoryDescription">変更内容</label>
-     <textarea id="versionHistoryDescription" name="description" rows="4" maxlength="1000" required></textarea>
-
-     <button id="versionHistorySubmit" type="submit">履歴を追加</button>
-   </form>
  </section>
 
-　<!-- 20261107 NP追加お問い合わせ -->
-	  <section id="inquiry" class="page">
+  <section id="inquiry" class="page">
     <div class="notice-page-title">
       <span class="material-icons" aria-hidden="true">mail</span>
       <h2>お問い合わせ</h2>
     </div>
-	<div class="contract-list-heading">
+
+    <div class="inquiry-section">
       <h3>新規お問い合わせ</h3>
-      <div class="contract-list-rule" aria-hidden="true"></div>	
-	   <h3>お問い合わせ履歴</h3>
-	  <div class="contract-list-rule" aria-hidden="true"></div>		
+      <div class="contract-list-rule" aria-hidden="true"></div>
+      <div class="inquiry-new-action">
+        <button type="button" class="inquiry-primary-button" onclick="showPage('newInquiry')">
+          新規お問い合わせ
+        </button>
+      </div>
+    </div>
+
+    <div class="inquiry-section">
+      <h3>お問い合わせ履歴</h3>
+      <div class="contract-list-rule" aria-hidden="true"></div>
+      <div class="inquiry-history-controls">
+        <label for="inquiryStatusFilter">回答状況</label>
+        <select id="inquiryStatusFilter" onchange="renderInquiryHistory()">
+          <option value="all">すべて</option>
+          <option value="answered">回答あり</option>
+          <option value="waiting">回答待ち</option>
+        </select>
+      </div>
+      <p id="inquiryHistoryStatus" class="inquiry-status" role="status" aria-live="polite">
+        お問い合わせ履歴を読み込んでいます。
+      </p>
+      <div id="inquiryHistoryList" class="inquiry-history-list"></div>
+    </div>
+  </section>
+
+  <section id="newInquiry" class="page">
+    <div class="notice-page-title">
+      <span class="material-icons" aria-hidden="true">mail</span>
+      <h2>新規お問い合わせ</h2>
+    </div>
+
+    <button type="button" class="back-btn" onclick="showPage('inquiry')">← お問い合わせへ戻る</button>
+
+    <form id="inquiryForm" class="inquiry-form" onsubmit="submitInquiry(event)">
+      <label for="inquiryCategory">カテゴリ</label>
+      <select id="inquiryCategory" name="category" required>
+        <option value="">カテゴリを選択して下さい。</option>
+        <option value="ログインについて。">ログインについて。</option>
+        <option value="オーナーズポータル操作に関して。">オーナーズポータル操作に関して。</option>
+        <option value="ご契約に関して。">ご契約に関して。</option>
+        <option value="建物管理に関して。">建物管理に関して。</option>
+        <option value="お支払いに関して。">お支払いに関して。</option>
+        <option value="オーナー様情報に関して。">オーナー様情報に関して。</option>
+        <option value="その他。">その他。</option>
+      </select>
+
+      <label for="inquirySubject">件名</label>
+      <input id="inquirySubject" name="subject" type="text" maxlength="100" required>
+
+      <label for="inquiryMessage">お問い合わせ内容</label>
+      <textarea id="inquiryMessage" name="message" rows="6" maxlength="5000" required></textarea>
+
+      <div class="inquiry-form-actions">
+        <button type="submit" class="inquiry-primary-button" id="inquirySubmitButton">送信</button>
+      </div>
+      <p id="inquiryFormStatus" class="inquiry-status" role="status" aria-live="polite"></p>
+    </form>
   </section>
 
   <section id="buildingInfo" class="page">
@@ -786,8 +828,8 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
     <div class="inspection-infobar">
 
       <div class="inspection-infobar-left">
-        <div>建物名称：<strong id="inspectionBuildingName">ルミナス・スターズ</strong></div>
-        <div>建物点検日：<span id="inspectionCheckDate">2026年06月17日(水)</span></div>
+        <div>建物名称：<strong id="inspectionBuildingName"></strong></div>
+        <div>建物点検日：<span id="inspectionCheckDate"></span></div>
       </div>
 
       <div class="inspection-infobar-right">
@@ -843,44 +885,44 @@ Page 1
             <div class="inspection-info-box">
 
               <div class="inspection-info-photo">
-                <img src="https://mpg023.github.io/OwnersPortal/images/construction/cards/luminous-stars.JPG" id="inspectionMainPhoto" onerror="this.style.display='none'">
+                <img id="inspectionMainPhoto" onerror="this.style.display='none'">
               </div>
 
               <table class="inspection-info-table">
 
                 <tr>
                   <th>オーナー様</th>
-                  <td id="reportOwner">小松 宗夫</td>
+                  <td id="reportOwner"></td>
                 </tr>
 
                 <tr>
                   <th>管理営業所</th>
-                  <td id="reportOffice">松本</td>
+                  <td id="reportOffice"></td>
                 </tr>
 
                 <tr>
                   <th>担当者</th>
-                  <td id="reportStaff">鈴木　康治</td>
+                  <td id="reportStaff"></td>
                 </tr>
 
                 <tr>
                   <th>建物点検日</th>
-                  <td id="reportInspectionDate">2026年06月17日(水)</td>
+                  <td id="reportInspectionDate"></td>
                 </tr>
 
                 <tr>
                   <th>建物CD</th>
-                  <td id="reportBuildingCode">0283228-01</td>
+                  <td id="reportBuildingCode"></td>
                 </tr>
 
                 <tr>
                   <th>建物完成日</th>
-                  <td id="reportCompletionDate">2026年01月31日</td>
+                  <td id="reportCompletionDate"></td>
                 </tr>
 
                 <tr>
                   <th>契約形態</th>
-                  <td id="reportContract">フルパッケージ</td>
+                  <td id="reportContract"></td>
                 </tr>
 
               </table>
@@ -891,20 +933,8 @@ Page 1
 
               <h3>総合判定</h3>
 
-              <div class="inspection-rank good">
-
-                良好
-
-              </div>
-
-              <p>
-
-                建物全体を点検した結果、
-                現時点では重大な異常は確認されませんでした。
-                一部軽微な補修箇所がありますが、
-                建物の安全性には問題ありません。
-
-              </p>
+              <div class="inspection-rank" id="coverSummaryRank"></div>
+              <p id="coverSummaryText"></p>
 
             </div>
 
@@ -1124,11 +1154,7 @@ Page 6
 
               <td>
 
-                <span class="rank-good" id="summaryRank">
-
-                  良好
-
-                </span>
+                <span class="rank-good" id="summaryRank"></span>
 
               </td>
 
@@ -1214,7 +1240,7 @@ Page 6
 
               <br><br>
 
-              ______________________
+              <strong id="inspectionSignedStaff"></strong>
 
             </div>
 
@@ -1224,7 +1250,7 @@ Page 6
 
               <br><br>
 
-              ______________________
+              <strong id="inspectionSignedDate"></strong>
 
             </div>
 
@@ -1235,7 +1261,15 @@ Page 6
       </div>
 
       <div class="inspection-group" id="inspectionGroupCleaning" style="display:none;">
-        <p class="inspection-note">準備中です。</p>
+        <h3 class="inspection-section-title">清掃記録</h3>
+        <div class="inspection-table-scroll">
+          <table class="inspection-occupancy-table">
+            <thead>
+              <tr><th>清掃日</th><th>清掃箇所</th><th>清掃内容</th><th>判定</th><th>コメント</th><th>写真</th></tr>
+            </thead>
+            <tbody id="inspectionCleaningBody"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="inspection-group" id="inspectionGroupOccupancy" style="display:none;">
@@ -1277,15 +1311,39 @@ Page 6
       </div>
 
       <div class="inspection-group" id="inspectionGroupContract" style="display:none;">
-        <p class="inspection-note">準備中です。</p>
+        <h3 class="inspection-section-title">契約更新・完了状況</h3>
+        <div class="inspection-table-scroll">
+          <table class="inspection-occupancy-table">
+            <thead>
+              <tr><th>部屋No.</th><th>契約番号</th><th>契約者名</th><th>更新期限</th><th>更新状況</th><th>完了日</th><th>備考</th></tr>
+            </thead>
+            <tbody id="inspectionContractBody"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="inspection-group" id="inspectionGroupReception" style="display:none;">
-        <p class="inspection-note">準備中です。</p>
+        <h3 class="inspection-section-title">受付・対応状況</h3>
+        <div class="inspection-table-scroll">
+          <table class="inspection-occupancy-table">
+            <thead>
+              <tr><th>受付日</th><th>受付内容</th><th>対応状況</th><th>担当者</th><th>対応日</th><th>対応内容</th></tr>
+            </thead>
+            <tbody id="inspectionReceptionBody"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="inspection-group" id="inspectionGroupMeeting" style="display:none;">
-        <p class="inspection-note">準備中です。</p>
+        <h3 class="inspection-section-title">お打合せ履歴</h3>
+        <div class="inspection-table-scroll">
+          <table class="inspection-occupancy-table">
+            <thead>
+              <tr><th>打合せ日</th><th>参加者</th><th>議題</th><th>決定事項</th><th>次回予定</th><th>備考</th></tr>
+            </thead>
+            <tbody id="inspectionMeetingBody"></tbody>
+          </table>
+        </div>
       </div>
 
     </div>
@@ -1630,7 +1688,7 @@ Page 6
 	  
     <div class="notice-page-title">
       <span class="material-icons" aria-hidden="true">apartment</span>
-      <h2>建物完成までの歩み</h2>
+      <h2 id="buildingHistoryTitle">建物完成までの歩み</h2>
     </div>
 
 	  
@@ -1724,7 +1782,7 @@ Page 6
         <span>工事の状況</span>
       </button>
 
-      <button class="photo-item" onclick="closePhotoMenu();showPage('building-history');loadHistory();">
+      <button class="photo-item" onclick="closePhotoMenu();showPage('building-history');loadHistory(currentPhotoBuilding);">
         <span class="material-icons">person</span>
         <span>工事完成までの歩み</span>
       </button>

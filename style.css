@@ -3689,6 +3689,174 @@ div {
   color: #c8102e;
 }
 
+.inquiry-section {
+  margin: 24px 0 32px;
+}
+
+.inquiry-section > h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.inquiry-new-action {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.inquiry-new-action .inquiry-primary-button {
+  width: min(100%, 360px);
+  min-height: 64px;
+  padding: 16px 32px;
+  font-size: 20px;
+}
+
+.inquiry-primary-button {
+  min-height: 44px;
+  padding: 10px 24px;
+  border: 1px solid #c8102e;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inquiry-primary-button {
+  background: #c8102e;
+  color: #fff;
+}
+
+.inquiry-primary-button:hover {
+  background: #a90d26;
+}
+
+.inquiry-form {
+  display: grid;
+  gap: 10px;
+  max-width: 720px;
+  margin: 0 auto 24px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.inquiry-form input,
+.inquiry-form select,
+.inquiry-form textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #222;
+  font: inherit;
+}
+
+.inquiry-form textarea {
+  resize: vertical;
+}
+
+.inquiry-form input:focus,
+.inquiry-form select:focus,
+.inquiry-form textarea:focus,
+.inquiry-primary-button:focus-visible {
+  outline: 2px solid #c8102e;
+  outline-offset: 2px;
+}
+
+.inquiry-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.inquiry-history-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 360px;
+  margin: 18px 0;
+}
+
+.inquiry-history-controls label {
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+
+.inquiry-history-controls select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #222;
+  font: inherit;
+}
+
+.inquiry-history-controls select:focus {
+  outline: 2px solid #c8102e;
+  outline-offset: 2px;
+}
+
+.inquiry-status {
+  min-height: 1.5em;
+  color: #555;
+}
+
+.inquiry-history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.inquiry-history-entry {
+  padding: 16px 18px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.inquiry-history-entry h4 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.inquiry-history-entry p {
+  margin: 8px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.inquiry-history-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: #666;
+  font-size: 14px;
+}
+
+.inquiry-answer {
+  margin-top: 14px;
+  padding: 12px;
+  border-left: 3px solid #c8102e;
+  background: #faf7f5;
+}
+
+@media (max-width: 600px) {
+  .inquiry-form {
+    padding: 16px;
+  }
+
+  .inquiry-history-controls {
+    align-items: stretch;
+  }
+}
+
 .version-history-entry-date {
   color: #666;
   font-size: 14px;
@@ -3701,65 +3869,6 @@ div {
   overflow-wrap: anywhere;
 }
 
-.version-history-form {
-  display: grid;
-  gap: 10px;
-  max-width: 720px;
-  margin: 28px 0 36px;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  background: #fff;
-}
-
-.version-history-form[hidden] {
-  display: none;
-}
-
-.version-history-form h3 {
-  margin: 0 0 4px;
-}
-
-.version-history-form input,
-.version-history-form textarea {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 1px solid #aaa;
-  border-radius: 6px;
-  font: inherit;
-}
-
-.version-history-form textarea {
-  resize: vertical;
-}
-
-.version-history-form input:focus-visible,
-.version-history-form textarea:focus-visible {
-  border-color: #c8102e;
-  outline: 2px solid #c8102e;
-  outline-offset: 1px;
-}
-
-.version-history-form button {
-  min-height: 46px;
-  margin-top: 6px;
-  padding: 10px 16px;
-  border: 0;
-  border-radius: 8px;
-  background: #c8102e;
-  color: #fff;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.version-history-form button:disabled {
-  cursor: wait;
-  opacity: 0.65;
-}
-
 @media (max-width: 768px) {
   .home-notice-section {
     margin: 0 16px 28px;
@@ -3769,10 +3878,6 @@ div {
   .version-history-home-link {
     width: calc(100% - 32px);
     margin: 0 16px 28px;
-  }
-
-  .version-history-form {
-    padding: 16px;
   }
 
   .home-notice-heading h2 {
