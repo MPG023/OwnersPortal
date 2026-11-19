@@ -147,7 +147,7 @@ const VERSION_HISTORY_API_URL =
 const INSPECTION_REPORT_API_URL = "";
 
 // Deploy Inquiry.gs as a web app and paste its URL here.
-const INQUIRY_API_URL = "";
+const INQUIRY_API_URL = "https://script.google.com/macros/s/AKfycbxYgwMrupg8auqVVugdepmoOsAZFoJ5KFG30IJxGyhwWbwzarBoqJ9eOBUBV_ZivCVwbQ/exec";
 
 // type: "notices" / "recruit" / "documents" / "repair" / "incomeStatement" /
 //       "constructionStatus"
