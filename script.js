@@ -144,10 +144,10 @@ const VERSION_HISTORY_API_URL =
   "https://script.google.com/macros/s/AKfycbx6k2IqTHKLUzTq2EXNL2ROOrv941mnfxUXDjwUlEA4qPF7lCpyNrhArM537jBqzsYa/exec";
 
 // Deploy InspectionReport.gs as a web app and paste its URL here.
-const INSPECTION_REPORT_API_URL = "";
+const INSPECTION_REPORT_API_URL = "https://script.google.com/macros/s/AKfycbzXpkgExd-klnSlig6pyygvHKfHCZrwXaJPK1JlV0ZKxqPodkjTFkyGEtObEFK300ml/exec";
 
 // Deploy Inquiry.gs as a web app and paste its URL here.
-const INQUIRY_API_URL = "";
+const INQUIRY_API_URL = "https://script.google.com/macros/s/AKfycbxYgwMrupg8auqVVugdepmoOsAZFoJ5KFG30IJxGyhwWbwzarBoqJ9eOBUBV_ZivCVwbQ/exec";
 
 // type: "notices" / "recruit" / "documents" / "repair" / "incomeStatement" /
 //       "constructionStatus"
