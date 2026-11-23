@@ -144,10 +144,10 @@ const VERSION_HISTORY_API_URL =
   "https://script.google.com/macros/s/AKfycbx6k2IqTHKLUzTq2EXNL2ROOrv941mnfxUXDjwUlEA4qPF7lCpyNrhArM537jBqzsYa/exec";
 
 // Deploy InspectionReport.gs as a web app and paste its URL here.
-const INSPECTION_REPORT_API_URL = "https://script.google.com/macros/s/AKfycbzXpkgExd-klnSlig6pyygvHKfHCZrwXaJPK1JlV0ZKxqPodkjTFkyGEtObEFK300ml/exec";
+const INSPECTION_REPORT_API_URL = "";
 
 // Deploy Inquiry.gs as a web app and paste its URL here.
-const INQUIRY_API_URL = "https://script.google.com/macros/s/AKfycbxYgwMrupg8auqVVugdepmoOsAZFoJ5KFG30IJxGyhwWbwzarBoqJ9eOBUBV_ZivCVwbQ/exec";
+const INQUIRY_API_URL = "";
 
 // type: "notices" / "recruit" / "documents" / "repair" / "incomeStatement" /
 //       "constructionStatus"
@@ -223,8 +223,7 @@ async function fetchSecureCsv(type) {
 // 読んだお知らせ（アカウントごとにFirestoreへ保存し、端末をまたいで共有する）
 let readNotices = [];
 let allNoticeRows = [];
-let currentNoticeYear = new Date().getFullYear();
-let noticeYearInitialized = false;
+const currentNoticeYear = 2026;
 let currentUserUid = null;
 let currentUserEmail = null;
 let noticeLoading = false;
@@ -1791,42 +1790,6 @@ function getNoticeYear(date) {
   return Number.isNaN(parsedDate.getTime()) ? null : parsedDate.getFullYear();
 }
 
-function getNoticeYearBounds() {
-  const availableYears = allNoticeRows
-    .map((cols) => getNoticeYear(cols[4]))
-    .filter((year) => year !== null);
-  const thisYear = new Date().getFullYear();
-
-  return {
-    minYear: Math.min(thisYear - 1, ...availableYears),
-    maxYear: Math.max(thisYear, ...availableYears)
-  };
-}
-
-function renderNoticeYearControls() {
-  const yearEl = document.getElementById("noticeYear");
-  const prevButton = document.getElementById("prevNoticeYearBtn");
-  const nextButton = document.getElementById("nextNoticeYearBtn");
-  const yearGrid = document.getElementById("noticeYearPickerGrid");
-  if (!yearEl || !prevButton || !nextButton || !yearGrid) return;
-
-  const { minYear, maxYear } = getNoticeYearBounds();
-  currentNoticeYear = Math.max(minYear, Math.min(currentNoticeYear, maxYear));
-
-  yearEl.textContent = `${currentNoticeYear}年`;
-  prevButton.disabled = currentNoticeYear <= minYear;
-  nextButton.disabled = currentNoticeYear >= maxYear;
-
-  let html = "";
-  for (let year = minYear; year <= maxYear; year++) {
-    const selected = year === currentNoticeYear;
-    html += `<button type="button" class="year-picker-option${
-      selected ? " selected" : ""
-    }" ${selected ? 'aria-current="true"' : ""} onclick="selectNoticeYear(${year})">${year}年</button>`;
-  }
-  yearGrid.innerHTML = html;
-}
-
 // ===== ホーム：最新のお知らせ5件 =====
 function getNoticeTimestamp(cols) {
   const dateText = String(cols[4] || "");
@@ -1914,7 +1877,6 @@ function renderNoticeList() {
   const list = document.getElementById("noticeList");
   if (!list) return;
 
-  renderNoticeYearControls();
   const visibleRows = allNoticeRows.filter((cols) => {
     const year = getNoticeYear(cols[4]);
     return (
@@ -2030,40 +1992,10 @@ function renderNoticeListWithLoading() {
   }, 500);
 }
 
-function openNoticeYearPicker() {
-  renderNoticeYearControls();
-  const modal = document.getElementById("noticeYearPickerModal");
-  if (modal) modal.classList.add("open");
-}
-
-function closeNoticeYearPicker() {
-  const modal = document.getElementById("noticeYearPickerModal");
-  if (modal) modal.classList.remove("open");
-}
-
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
-  closeNoticeYearPicker();
   closeMonthPicker();
 });
-
-function changeNoticeYear(diff) {
-  const { minYear, maxYear } = getNoticeYearBounds();
-  const nextYear = currentNoticeYear + diff;
-  if (nextYear < minYear || nextYear > maxYear) return;
-
-  currentNoticeYear = nextYear;
-  renderNoticeListWithLoading();
-}
-
-function selectNoticeYear(year) {
-  const { minYear, maxYear } = getNoticeYearBounds();
-  if (!Number.isInteger(year) || year < minYear || year > maxYear) return;
-
-  currentNoticeYear = year;
-  closeNoticeYearPicker();
-  renderNoticeListWithLoading();
-}
 
 async function loadNotices() {
   // 通信が30秒を超えても、前回の取得結果が新しい表示を上書きしないようにする
@@ -2093,23 +2025,6 @@ async function loadNotices() {
       .filter((cols) => cols.some((value) => String(value).trim() !== ""))
       .reverse();
     allNoticeRows = rows;
-
-    if (!noticeYearInitialized) {
-      const availableYears = rows
-        .map((cols) => getNoticeYear(cols[4]))
-        .filter((year) => year !== null)
-        .sort((a, b) => a - b);
-      const thisYear = new Date().getFullYear();
-      const currentYearRows = availableYears.includes(thisYear);
-      const pastYears = availableYears.filter((year) => year <= thisYear);
-
-      currentNoticeYear = currentYearRows
-        ? thisYear
-        : pastYears.length
-        ? pastYears[pastYears.length - 1]
-        : thisYear;
-      noticeYearInitialized = true;
-    }
 
     const unreadCount = rows.filter((cols) => {
       const id = cols[0];
@@ -4018,7 +3933,23 @@ async function loadIncome() {
 }
 
 function renderIncome() {
-  document.getElementById("incomeYear").textContent = `${currentIncomeYear}年`;
+  const yearSelector = document.getElementById("incomeYear");
+  if (!yearSelector) return;
+
+  const latestSelectableYear = incomeToday.getFullYear();
+  currentIncomeYear = Math.max(
+    INCOME_START_YEAR,
+    Math.min(currentIncomeYear, latestSelectableYear)
+  );
+  yearSelector.replaceChildren();
+
+  for (let year = latestSelectableYear; year >= INCOME_START_YEAR; year--) {
+    const option = document.createElement("option");
+    option.value = String(year);
+    option.textContent = `${year}年`;
+    yearSelector.appendChild(option);
+  }
+  yearSelector.value = String(currentIncomeYear);
 
   const list = allIncomeDocs.filter(
     (x) => Number(x.year) === currentIncomeYear
@@ -4069,6 +4000,20 @@ function renderIncomeWithLoading() {
       if (overlay) overlay.style.display = "none";
     }
   }, 500);
+}
+
+function selectIncomeYear(value) {
+  const year = Number(value);
+  if (
+    !Number.isInteger(year) ||
+    year < INCOME_START_YEAR ||
+    year > incomeToday.getFullYear()
+  ) {
+    return;
+  }
+
+  currentIncomeYear = year;
+  renderIncomeWithLoading();
 }
 
 document.getElementById("prevYearBtn").onclick = () => {

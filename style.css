@@ -1593,6 +1593,7 @@ body.owners-font-size-large {
 
 .notice-year-bar {
   margin-top: 0;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .notice-page-note {
@@ -2870,14 +2871,30 @@ div {
 #noticeYear {
   border: 2px solid #e60033;
   border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 38px;
+  color: #999;
+}
+
+#incomeYear {
+  width: 100%;
+  height: 70px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  background: #fff;
+  color: #222;
+  font: 700 38px "Noto Sans JP", sans-serif;
+  text-align: center;
+  text-align-last: center;
+  cursor: pointer;
 }
 
 #noticeYear {
+  display: flex;
   width: 100%;
+  height: 70px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
   padding: 0 8px;
   background: #fff;
   color: #222;
@@ -3255,6 +3272,10 @@ div {
   #paymentPage .month-bar {
     grid-template-columns: 78px minmax(0, 1fr) 78px;
     gap: 8px;
+  }
+
+  #noticeListPage .notice-year-bar {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   #noticeListPage .year-bar button,
@@ -4111,7 +4132,9 @@ div {
   #income .page-title h2 { min-width: 0; margin: 0; font-size: clamp(20px, 5.4vw, 25px) !important; line-height: 1.3; overflow-wrap: anywhere; }
   #paymentPage .month-bar, #income .year-bar { display: grid; grid-template-columns: minmax(64px, 78px) minmax(0, 1fr) minmax(64px, 78px); gap: 8px; box-sizing: border-box; width: 100%; margin: 12px 0 16px; }
   #paymentPage .month-bar button, #income .year-bar button { width: 100%; min-width: 0; height: 48px !important; padding: 0 3px; font-size: 12px !important; white-space: nowrap; }
-  #paymentPage #paymentMonth, #income #incomeYear { display: flex; min-width: 0; height: 48px; box-sizing: border-box; align-items: center; justify-content: center; font-size: clamp(17px, 4.5vw, 21px) !important; line-height: 1; white-space: nowrap; }
+  #paymentPage #paymentMonth { display: flex; min-width: 0; height: 48px; box-sizing: border-box; align-items: center; justify-content: center; font-size: clamp(17px, 4.5vw, 21px) !important; line-height: 1; white-space: nowrap; }
+  #income #incomeYear { min-width: 0; height: 48px; padding: 0 8px; box-sizing: border-box; font-size: clamp(17px, 4.5vw, 21px) !important; }
+  #noticeListPage #noticeYear { font-size: clamp(26px, 7vw, 32px) !important; }
   #paymentPage .payment-total { display: flex; box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; flex-direction: column; align-items: center; justify-content: center; gap: 4px; margin: 12px 0 18px; padding: 14px 10px; text-align: center; }
   #paymentPage .payment-label { width: auto; height: auto; font-size: 16px !important; line-height: 1.4; overflow-wrap: anywhere; }
   #paymentPage .payment-price { width: auto; height: auto; max-width: 100%; font-size: clamp(26px, 8vw, 36px) !important; line-height: 1.2; overflow-wrap: anywhere; }

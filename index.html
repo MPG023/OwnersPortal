@@ -104,6 +104,7 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
       <img src="./images/owner-logo.png" alt="オーナーズポータル" onerror="this.style.display='none'">
     </div>
 
+    <h1 class="login-title">オーナーズポータル</h1>
     <p class="login-subtitle">物件オーナー様専用ログイン</p>
 
     <form id="loginForm" autocomplete="on">
@@ -401,11 +402,13 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
 
   </section>
 
-	 <section id="versionHistory" class="page">
-    <div class="notice-page-title">
-      <span class="material-icons" aria-hidden="true">history</span>
-      <h2>バージョン履歴</h2>
-    </div>
+ <section id="versionHistory" class="page">
+   <div class="page-title">
+     <span class="material-icons" aria-hidden="true">history</span>
+     <h2>バージョン履歴</h2>
+   </div>
+
+   <button type="button" class="back-btn" onclick="backHome()">← ホームへ戻る</button>
 
    <p id="versionHistoryStatus" class="version-history-status" role="status" aria-live="polite">
      バージョン履歴を読み込んでいます。
@@ -459,14 +462,14 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
     <form id="inquiryForm" class="inquiry-form" onsubmit="submitInquiry(event)">
       <label for="inquiryCategory">カテゴリ</label>
       <select id="inquiryCategory" name="category" required>
-        <option value="">カテゴリを選択して下さい</option>
-        <option value="ログインについて。">ログインについて</option>
-        <option value="オーナーズポータル操作に関して。">オーナーズポータル操作に関して</option>
-        <option value="ご契約に関して。">ご契約に関して</option>
-        <option value="建物管理に関して。">建物管理に関して</option>
-        <option value="お支払いに関して。">お支払いに関して</option>
-        <option value="オーナー様情報に関して。">オーナー様情報に関して</option>
-        <option value="その他。">その他</option>
+        <option value="">カテゴリを選択して下さい。</option>
+        <option value="ログインについて。">ログインについて。</option>
+        <option value="オーナーズポータル操作に関して。">オーナーズポータル操作に関して。</option>
+        <option value="ご契約に関して。">ご契約に関して。</option>
+        <option value="建物管理に関して。">建物管理に関して。</option>
+        <option value="お支払いに関して。">お支払いに関して。</option>
+        <option value="オーナー様情報に関して。">オーナー様情報に関して。</option>
+        <option value="その他。">その他。</option>
       </select>
 
       <label for="inquirySubject">件名</label>
@@ -785,9 +788,13 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
         ◀ 前年
       </button>
 
-      <div id="incomeYear">
-        ----年
-      </div>
+      <select
+        id="incomeYear"
+        aria-label="年間収支内訳書の年を選択"
+        onchange="selectIncomeYear(this.value)"
+      >
+        <option value="2026">2026年</option>
+      </select>
 
       <button id="nextYearBtn">
         次年 ▶
@@ -1431,24 +1438,7 @@ Page 6
     </div>
 
     <div class="year-bar notice-year-bar">
-      <button id="prevNoticeYearBtn" type="button" onclick="changeNoticeYear(-1)">
-        ◀ 前年
-      </button>
-
-      <button
-        id="noticeYear"
-        class="year-selector"
-        type="button"
-        onclick="openNoticeYearPicker()"
-        aria-haspopup="dialog"
-        aria-controls="noticeYearPickerModal"
-      >
-        ----年
-      </button>
-
-      <button id="nextNoticeYearBtn" type="button" onclick="changeNoticeYear(1)">
-        次年 ▶
-      </button>
+      <div id="noticeYear" aria-label="表示中のお知らせの年">2026年</div>
     </div>
 
     <p class="notice-page-note">
@@ -1952,24 +1942,6 @@ Page 6
         <button onclick="nextModal()">次へ ▶</button>
         <button onclick="closeModal()">✕ 閉じる</button>
       </div>
-    </div>
-  </div>
-
-  <!-- お知らせ：年選択カレンダー -->
-  <div
-    id="noticeYearPickerModal"
-    class="year-picker-modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="noticeYearPickerTitle"
-    onclick="if(event.target===this)closeNoticeYearPicker()"
-  >
-    <div class="year-picker-box">
-      <div class="year-picker-header">
-        <span id="noticeYearPickerTitle">表示する年を選択</span>
-        <button type="button" class="year-picker-close" onclick="closeNoticeYearPicker()" aria-label="閉じる">✕</button>
-      </div>
-      <div id="noticeYearPickerGrid" class="year-picker-grid"></div>
     </div>
   </div>
 
