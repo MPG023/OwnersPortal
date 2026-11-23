@@ -1593,7 +1593,6 @@ body.owners-font-size-large {
 
 .notice-year-bar {
   margin-top: 0;
-  grid-template-columns: minmax(0, 1fr);
 }
 
 .notice-page-note {
@@ -3272,10 +3271,6 @@ div {
   #paymentPage .month-bar {
     grid-template-columns: 78px minmax(0, 1fr) 78px;
     gap: 8px;
-  }
-
-  #noticeListPage .notice-year-bar {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   #noticeListPage .year-bar button,

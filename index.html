@@ -403,10 +403,12 @@ if (localStorage.getItem(analyticsConsentKey) === 'granted' || localStorage.getI
   </section>
 
  <section id="versionHistory" class="page">
-    <div class="notice-page-title">
-      <span class="material-icons" aria-hidden="true">history</span>
-      <h2>バージョン履歴</h2>
-    </div>
+   <div class="page-title">
+     <span class="material-icons" aria-hidden="true">history</span>
+     <h2>バージョン履歴</h2>
+   </div>
+
+   <button type="button" class="back-btn" onclick="backHome()">← ホームへ戻る</button>
 
    <p id="versionHistoryStatus" class="version-history-status" role="status" aria-live="polite">
      バージョン履歴を読み込んでいます。
@@ -1436,7 +1438,24 @@ Page 6
     </div>
 
     <div class="year-bar notice-year-bar">
-      <div id="noticeYear" aria-label="表示中のお知らせの年">2026年</div>
+      <button id="prevNoticeYearBtn" type="button" onclick="changeNoticeYear(-1)">
+        ◀ 前年
+      </button>
+
+      <button
+        id="noticeYear"
+        class="year-selector"
+        type="button"
+        onclick="openNoticeYearPicker()"
+        aria-haspopup="dialog"
+        aria-controls="noticeYearPickerModal"
+      >
+        ----年
+      </button>
+
+      <button id="nextNoticeYearBtn" type="button" onclick="changeNoticeYear(1)">
+        次年 ▶
+      </button>
     </div>
 
     <p class="notice-page-note">
@@ -1940,6 +1959,24 @@ Page 6
         <button onclick="nextModal()">次へ ▶</button>
         <button onclick="closeModal()">✕ 閉じる</button>
       </div>
+    </div>
+  </div>
+
+  <!-- お知らせ：年選択カレンダー -->
+  <div
+    id="noticeYearPickerModal"
+    class="year-picker-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="noticeYearPickerTitle"
+    onclick="if(event.target===this)closeNoticeYearPicker()"
+  >
+    <div class="year-picker-box">
+      <div class="year-picker-header">
+        <span id="noticeYearPickerTitle">表示する年を選択</span>
+        <button type="button" class="year-picker-close" onclick="closeNoticeYearPicker()" aria-label="閉じる">✕</button>
+      </div>
+      <div id="noticeYearPickerGrid" class="year-picker-grid"></div>
     </div>
   </div>
 
