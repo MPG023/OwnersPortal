@@ -503,12 +503,14 @@ function handleInactivityTimeout() {
 
   document.getElementById("portal").style.display = "none";
   document.getElementById("loginPage").style.display = "none";
+  document.body.classList.add("timeout-active");
   document.getElementById("timeoutPage").style.display = "block";
   document.querySelector("#timeoutPage .timeout-btn")?.focus();
 }
 
 function goToLoginFromTimeout() {
   document.getElementById("timeoutPage").style.display = "none";
+  document.body.classList.remove("timeout-active");
   document.getElementById("loginPage").style.display = "flex";
 }
 
@@ -521,12 +523,17 @@ const timeoutBlockedEvents = [
   "mouseup",
   "touchstart",
   "touchend",
+  "touchmove",
+  "pointermove",
   "keydown",
   "keyup",
+  "keypress",
   "submit",
   "change",
   "input",
+  "beforeinput",
   "wheel",
+  "scroll",
   "contextmenu",
   "dragstart"
 ];
@@ -539,17 +546,19 @@ timeoutBlockedEvents.forEach((eventName) => {
       if (!timeoutPage || timeoutPage.style.display === "none") return;
 
       const loginButton = event.target.closest?.("#timeoutPage .timeout-btn");
-      if (loginButton) {
-        if (
-          (event.type === "keydown" || event.type === "keyup") &&
-          event.key !== "Enter" &&
-          event.key !== " "
-        ) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-        }
-        return;
-      }
+      const loginButtonPointerEvents = [
+        "pointerdown",
+        "pointerup",
+        "mousedown",
+        "mouseup",
+        "touchstart",
+        "touchend"
+      ];
+      if (
+        loginButton &&
+        (loginButtonPointerEvents.includes(event.type) ||
+          (event.type === "click" && event.detail > 0))
+      ) return;
 
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -4107,6 +4116,9 @@ document.getElementById("nextYearBtn").onclick = () => {
 };
 
 document.addEventListener("keydown", function (event) {
+  const timeoutPage = document.getElementById("timeoutPage");
+  if (timeoutPage && timeoutPage.style.display !== "none") return;
+
   if (event.key === "Enter") {
     const loginPage = document.getElementById("loginPage");
 

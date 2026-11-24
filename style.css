@@ -712,6 +712,10 @@ body {
   z-index: 9999;
 }
 
+body.timeout-active {
+  overflow: hidden !important;
+}
+
 .timeout-page p {
   font-size: 22px;
   font-weight: 700;
@@ -4199,5 +4203,21 @@ div {
   .mobile-portal-badge {
     font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
     font-synthesis: weight;
+  }
+}
+
+@supports (font: -apple-system-body) {
+  @media screen and (max-width: 1366px) and (hover: none) and (pointer: coarse) {
+    .bottom-nav .icon-wrap .notice-badge,
+    #portal .mobile-portal-badge,
+    #portal .mobile-notice-count {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif !important;
+    }
+
+    .bottom-nav .icon-wrap .notice-badge {
+      font-weight: 700 !important;
+      -webkit-text-stroke: 0 !important;
+      text-shadow: none !important;
+    }
   }
 }
