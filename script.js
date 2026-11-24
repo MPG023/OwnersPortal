@@ -144,10 +144,10 @@ const VERSION_HISTORY_API_URL =
   "https://script.google.com/macros/s/AKfycbx6k2IqTHKLUzTq2EXNL2ROOrv941mnfxUXDjwUlEA4qPF7lCpyNrhArM537jBqzsYa/exec";
 
 // Deploy InspectionReport.gs as a web app and paste its URL here.
-const INSPECTION_REPORT_API_URL = "https://script.google.com/macros/s/AKfycbzXpkgExd-klnSlig6pyygvHKfHCZrwXaJPK1JlV0ZKxqPodkjTFkyGEtObEFK300ml/exec";
+const INSPECTION_REPORT_API_URL = "";
 
 // Deploy Inquiry.gs as a web app and paste its URL here.
-const INQUIRY_API_URL = "https://script.google.com/macros/s/AKfycbxYgwMrupg8auqVVugdepmoOsAZFoJ5KFG30IJxGyhwWbwzarBoqJ9eOBUBV_ZivCVwbQ/exec";
+const INQUIRY_API_URL = "";
 
 // type: "notices" / "recruit" / "documents" / "repair" / "incomeStatement" /
 //       "constructionStatus"
@@ -2060,6 +2060,7 @@ async function loadNotices() {
   const list = document.getElementById("noticeList");
   if (!list) return;
 
+  renderNoticeYearControls();
   noticeLoading = true;
 
   // すでに表示中の内容は、更新失敗時にも消さない
