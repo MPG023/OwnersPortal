@@ -290,8 +290,8 @@ const properties = {
     contract: "フルパッケージ",
     office: "松本",
     staff: "鈴木  　康治",
-    inspectionDate: "2026/11/27",
-    cleaningDate: "2026/11/09",
+    inspectionDate: "2026/09/29",
+    cleaningDate: "2026/11/9",
     contractDate: "2025/02/20",
     completion: "2026/01/31",
     totalBuildings: "",
@@ -2700,7 +2700,7 @@ function closeDocumentMenu() {
 // 5列目：入居日（例：2026/03/01。無ければ「-」でも可）
 // 6列目：募集時の家賃・駐車料（例：64,500円 / 無料）
 // 7列目：入居者名（例：*****。個人名をそのまま載せないようご注意ください）
-// 8列目：備考（任意。ホームズ掲載アーカイブページのURLなどを入れるとリンクとして表示されます）
+// 8列目：備考（任意。不動産掲載ページのURLを入れるとサイト名付きリンクとして表示されます）
 //
 // シート作成後、「ファイル」→「共有」→「ウェブに公開」からCSV形式のリンクを発行し、
 // 下記のスプレッドシートは、認証付きAPI（SECURE_API_URL, type=recruit）経由で取得します。
@@ -2807,25 +2807,78 @@ function renderRecruitStatusTable(tbodyId, rows) {
   rows.forEach((c) => {
     // スプレッドシートから読み込んだ列データを分解
     const [, , roomOrPkgNo, status, moveInDate, price, tenantName, note] = c;
+    const row = document.createElement("tr");
 
-    // 備考欄にURL（ホームズ掲載）がある場合のリンク処理
-    const noteCell =
-      note && note.startsWith("http")
-        ? `<a href="${note}" target="_blank" class="eheya-link">● ホームズ掲載アーカイブページを見る</a>`
-        : note || "";
+    const roomCell = document.createElement("td");
+    roomCell.className = "status-room-title";
+    roomCell.dataset.label = headers[0] || "";
+    roomCell.textContent = roomOrPkgNo || "";
+    row.appendChild(roomCell);
 
-    // 【最重要】住居と駐車場の出力を完全に同じクラス・構造に統一
-    tbody.innerHTML += `
-    <tr>
-      <td class="status-room-title" data-label="${headers[0]}">${roomOrPkgNo || ""}</td>
-      <td data-label="${headers[1]}"><span class="status-cell-value">${status || ""}</span></td>
-      <td data-label="${headers[2]}"><span class="status-cell-value">${moveInDate || ""}</span></td>
-      <td data-label="${headers[3]}"><span class="status-cell-value">${price || ""}</span></td>
-      <td data-label="${headers[4]}"><span class="status-cell-value">${tenantName || ""}</span></td>
-      <td class="status-note-cell" data-label="${headers[5]}"><span class="status-cell-value">${noteCell}</span></td>
-    </tr>
-    `;
+    [status, moveInDate, price, tenantName].forEach((value, index) => {
+      const cell = document.createElement("td");
+      cell.dataset.label = headers[index + 1] || "";
+      const valueElement = document.createElement("span");
+      valueElement.className = "status-cell-value";
+      valueElement.textContent = value || "";
+      cell.appendChild(valueElement);
+      row.appendChild(cell);
+    });
+
+    const noteCell = document.createElement("td");
+    noteCell.className = "status-note-cell";
+    noteCell.dataset.label = headers[5] || "";
+    const noteValue = document.createElement("span");
+    noteValue.className = "status-cell-value";
+    const listingLink = createRecruitListingLink(note);
+    if (listingLink) {
+      noteValue.appendChild(listingLink);
+    } else {
+      noteValue.textContent = note || "";
+    }
+    noteCell.appendChild(noteValue);
+    row.appendChild(noteCell);
+
+    tbody.appendChild(row);
   });
+}
+
+function createRecruitListingLink(note) {
+  const value = String(note || "").trim();
+  if (!value) return null;
+
+  if (
+    !/^https?:\/\//i.test(value) &&
+    !/^(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}(?::\d+)?(?:[/?#]|$)/i.test(value)
+  ) {
+    return null;
+  }
+  const urlText = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  let url;
+  try {
+    url = new URL(urlText);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+
+  const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+  let label = `${hostname}の掲載ページを見る`;
+  if (hostname === "homes.co.jp" || hostname.endsWith(".homes.co.jp")) {
+    label = "ホームズ掲載ページを見る";
+  } else if (hostname === "eheya.net" || hostname.endsWith(".eheya.net")) {
+    label = "いい部屋ネット掲載ページを見る";
+  } else if (hostname === "minimini.jp" || hostname.endsWith(".minimini.jp")) {
+    label = "ミニミニ掲載ページを見る";
+  }
+
+  const link = document.createElement("a");
+  link.href = url.href;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.className = "eheya-link";
+  link.textContent = `● ${label}`;
+  return link;
 }
 
 
